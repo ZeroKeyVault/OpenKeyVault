@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@latest/dist/umd/index.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
 <style>
 body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:1rem;background:linear-gradient(135deg,#111,#222);color:#eee}
 h2{margin:.5rem 0;text-align:center}
@@ -26,17 +25,9 @@ button:disabled{background:#555;cursor:not-allowed}
   <option value="1313161554">Aurora</option>
 </select>
 
-<!-- Dead-Man Switch -->
-<input id="heir"  placeholder="Heir address (optional)" type="text"/>
-<input id="days"  placeholder="Dead-man days (365)" type="number" value="365"/>
-
-<!-- Fiat Off-Ramp -->
-<button onclick="openRamp()">Fiat Off-Ramp (Ramp)</button>
-
 <input id="dest"  placeholder="Destination address (0x…)" type="text"/>
 <input id="amount" placeholder="Amount" type="number" step="any"/>
-
-<button onclick="connectWallet()" id="connectBtn">Connect Wallet</button>
+<button onclick="connectWallet()" id="connectBtn">Connect Wallet (auto)</button>
 <button onclick="sendPrivate()" id="sendBtn" disabled>Send Privately</button>
 <button onclick="downloadBackup()">Download Backup PNG</button>
 
@@ -70,21 +61,22 @@ const RPCS = {
 };
 let web3, account, chainId;
 
-/* ---------- Wallet Connection ---------- */
+/* ---------- Auto-Connect Any Provider ---------- */
 async function connectWallet() {
   const status = document.getElementById("status");
   status.textContent = "Connecting…";
   try {
     let provider;
+    // 1. Any injected provider
     if (window.ethereum) {
       provider = window.ethereum;
       await provider.request({ method: "eth_requestAccounts" });
-      web3 = new Web3(provider);
     } else {
+      // 2. WalletConnect fallback
       provider = new WalletConnectProvider.default({ rpc: RPCS });
       await provider.enable();
-      web3 = new Web3(provider);
     }
+    web3 = new Web3(provider);
     const accounts = await web3.eth.getAccounts();
     account = accounts[0];
     chainId = Number(await web3.eth.getChainId());
@@ -100,12 +92,13 @@ async function geoLock() {
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
       pos => {
-        const { latitude, longitude } = pos.coords;
-        const banned = [[55.7, 37.6], [39.9, 116.4]]; // Moscow / Beijing
-        const inside = banned.some(([lat, lng]) => Math.abs(latitude - lat) < 3 && Math.abs(longitude - lng) < 3);
+        const banned = [[55.7, 37.6], [39.9, 116.4]]; // coarse Moscow / Beijing
+        const inside = banned.some(([lat, lng]) =>
+          Math.abs(pos.coords.latitude - lat) < 3 && Math.abs(pos.coords.longitude - lng) < 3
+        );
         resolve(!inside);
       },
-      () => resolve(true) // allow if user blocks geolocation
+      () => resolve(true) // allow if geolocation blocked
     );
   });
 }
@@ -118,7 +111,7 @@ async function predictedGas() {
 
 /* ---------- Rotating Tip ---------- */
 function rotatingTip() {
-  const salt = "zkvsalt"; // change before shipping
+  const salt = "zkvsalt"; // change before release
   const day = Math.floor(Date.now() / 86400000);
   const hash = web3.utils.soliditySha3(salt + day);
   return "0x" + hash.slice(-40);
@@ -126,8 +119,7 @@ function rotatingTip() {
 
 /* ---------- Fiat Off-Ramp ---------- */
 function openRamp() {
-  const rampUrl = "https://widget.ramp.network/?hostAppName=ZeroKeyVault&hostApiKey=none&swapAsset=ETH_ETH";
-  window.open(rampUrl, "_blank");
+  window.open("https://widget.ramp.network/?hostAppName=ZeroKeyVault&swapAsset=ETH_ETH", "_blank");
 }
 
 /* ---------- Steganographic Backup PNG ---------- */
@@ -149,23 +141,6 @@ function downloadBackup() {
   a.download = "backup.png";
   a.click();
 }
-
-/* ---------- Dead-Man Switch ---------- */
-function saveDeadMan(tempAddr) {
-  const heir = document.getElementById("heir").value;
-  const days = Number(document.getElementById("days").value) || 365;
-  if (heir && web3.utils.isAddress(heir)) {
-    localStorage.setItem("deadman_" + tempAddr, JSON.stringify({ heir, days: Date.now() + days * 86400000 }));
-  }
-}
-setInterval(() => {
-  Object.keys(localStorage).forEach(k => {
-    if (k.startsWith("deadman_")) {
-      const { heir, days } = JSON.parse(localStorage[k]);
-      if (Date.now() > days) localStorage.removeItem(k); // TODO: broadcast
-    }
-  });
-}, 60000);
 
 /* ---------- Send ---------- */
 async function sendPrivate() {
@@ -193,9 +168,15 @@ async function sendPrivate() {
   const signed2 = await web3.eth.accounts.signTransaction(tx2, tempKey);
   const hash2 = await web3.eth.sendSignedTransaction(signed2.rawTransaction);
 
-  saveDeadMan(tempAddr);
   document.getElementById("status").textContent = `Done! TX1: ${hash1.transactionHash}\nTX2: ${hash2.transactionHash}`;
 }
+
+/* ---------- Auto-connect on load (optional) ---------- */
+window.addEventListener("load", () => {
+  if (window.ethereum || window.web3) {
+    connectWallet();
+  }
+});
 </script>
 </body>
 </html>
