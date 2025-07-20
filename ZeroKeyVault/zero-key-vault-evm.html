@@ -6,45 +6,34 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@latest/dist/umd/index.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
 <style>
-body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:2rem;background:linear-gradient(135deg,#111,#222);color:#eee}
-h2{margin-top:0;text-align:center}
-input,select,button{width:100%;padding:.7rem;margin:.5rem 0;border-radius:6px;border:none;font-size:1rem}
-button{background:#1e90ff;color:#fff;font-weight:bold;cursor:pointer}
-button:disabled{opacity:.5}
-#status{margin-top:1rem;font-size:.9rem;color:#0f0;white-space:pre-wrap}
+body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:1rem;background:linear-gradient(135deg,#111,#222);color:#eee}
+h2{margin:.5rem 0;text-align:center}
+input,select,button{width:100%;padding:.75rem;margin:.4rem 0;border-radius:8px;border:none;font-size:1rem}
+button{background:#1e90ff;color:#fff;font-weight:600;cursor:pointer}
+button:disabled{background:#555;cursor:not-allowed}
+#status{margin-top:.5rem;font-size:.9rem;color:#0f0}
 </style>
 </head>
 <body>
 <h2>Zero-Key Vault – EVM</h2>
 
 <select id="chainSel">
-  <option value="1">Ethereum</option>
-  <option value="56">BNB Smart Chain</option>
-  <option value="137">Polygon</option>
-  <option value="43114">Avalanche</option>
-  <option value="250">Fantom</option>
-  <option value="42161">Arbitrum</option>
-  <option value="10">Optimism</option>
-  <option value="100">Gnosis</option>
-  <option value="25">Cronos</option>
+  <option value="1">Ethereum</option><option value="56">BNB Smart Chain</option><option value="137">Polygon</option>
+  <option value="43114">Avalanche</option><option value="250">Fantom</option><option value="42161">Arbitrum</option>
+  <option value="10">Optimism</option><option value="100">Gnosis</option><option value="25">Cronos</option>
   <option value="1313161554">Aurora</option>
 </select>
 
-<input id="dest" placeholder="Destination address (0x…)" type="text"/>
-<input id="amount" placeholder="Amount (e.g., 0.1)" type="number" step="any"/>
-<input id="heir" placeholder="Heir address (optional)" type="text"/>
-<input id="days" placeholder="Dead-man days (365)" type="number" value="365"/>
-
-<button onclick="connect()">Connect Wallet</button>
+<input id="dest"  placeholder="Destination address (0x…)" type="text"/>
+<input id="amount" placeholder="Amount" type="number" step="any"/>
+<button onclick="connectWallet()" id="connectBtn">Connect Wallet</button>
 <button onclick="sendPrivate()" id="sendBtn" disabled>Send Privately</button>
-<button onclick="downloadBackup()">Download Backup PNG</button>
 
 <div id="status"></div>
 
 <script>
-/* ========== CONFIG (YOUR ADDRESSES) ========== */
+/* ---------- CONFIG ---------- */
 const ADDRESSES = {
   1   : "0xd53ac12902B9218734C2b8198797b6c1a02B4C29",
   56  : "0xd53ac12902B9218734C2b8198797b6c1a02B4C29",
@@ -57,153 +46,72 @@ const ADDRESSES = {
   25  : "0xd53ac12902B9218734C2b8198797b6c1a02B4C29",
   1313161554: "0xd53ac12902B9218734C2b8198797b6c1a02B4C29"
 };
-/* ============================================ */
-
 const RPCS = {
-  1: "https://eth.llamarpc.com",
-  56: "https://bsc-dataseed.binance.org",
-  137: "https://polygon-rpc.com",
-  43114: "https://api.avax.network/ext/bc/C/rpc",
-  250: "https://rpc.ftm.tools",
-  42161: "https://arb1.arbitrum.io/rpc",
-  10: "https://mainnet.optimism.io",
-  100: "https://rpc.gnosischain.com",
-  25: "https://evm.cronos.org",
-  1313161554: "https://mainnet.aurora.dev"
+  1:"https://eth.llamarpc.com",
+  56:"https://bsc-dataseed.binance.org",
+  137:"https://polygon-rpc.com",
+  43114:"https://api.avax.network/ext/bc/C/rpc",
+  250:"https://rpc.ftm.tools",
+  42161:"https://arb1.arbitrum.io/rpc",
+  10:"https://mainnet.optimism.io",
+  100:"https://rpc.gnosischain.com",
+  25:"https://evm.cronos.org",
+  1313161554:"https://mainnet.aurora.dev"
 };
+let web3, account, chainId;
 
-let web3, chainId, account;
-
-/* ---------- connect wallet ---------- */
-async function connect() {
+async function connectWallet() {
+  const status = document.getElementById("status");
+  status.textContent = "Connecting…";
   try {
+    let provider;
     if (window.ethereum) {
-      await window.ethereum.request({ method: "eth_requestAccounts" });
-      web3 = new Web3(window.ethereum);
-      chainId = Number(await web3.eth.getChainId());
-      account = (await web3.eth.getAccounts())[0];
-      document.getElementById("sendBtn").disabled = false;
-      setStatus("Connected: " + account);
+      provider = window.ethereum;
+      await provider.request({ method: "eth_requestAccounts" });
+      web3 = new Web3(provider);
     } else {
-      setStatus("Install MetaMask or use WalletConnect.");
+      // WalletConnect fallback
+      provider = new WalletConnectProvider.default({
+        rpc: RPCS
+      });
+      await provider.enable();
+      web3 = new Web3(provider);
     }
+    const accounts = await web3.eth.getAccounts();
+    account = accounts[0];
+    chainId   = Number(await web3.eth.getChainId());
+    document.getElementById("sendBtn").disabled = false;
+    status.textContent = `Connected: ${account} on chain ${chainId}`;
   } catch (e) {
-    setStatus(e.message);
+    document.getElementById("status").textContent = "Error: " + e.message;
   }
 }
 
-/* ---------- geo-lock ---------- */
-function geoLock() {
-  return new Promise((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        const { latitude, longitude } = pos.coords;
-        const banned = [
-          [55, 37], // rough Moscow
-          [39, 116] // rough Beijing
-        ];
-        const inside = banned.some(([lat, lng]) =>
-          Math.abs(latitude - lat) < 3 && Math.abs(longitude - lng) < 3
-        );
-        resolve(!inside);
-      },
-      () => resolve(true) // allow if user blocks geolocation
-    );
-  });
-}
-
-/* ---------- AI gas prediction ---------- */
-async function predictedGas() {
-  // tiny ML stub – returns 1% lower than current
-  const current = await web3.eth.getGasPrice();
-  return (BigInt(current) * 99n / 100n).toString();
-}
-
-/* ---------- rotating tip ---------- */
-function rotatingTip() {
-  const salt = "zkvsalt"; // change before release
-  const day = Math.floor(Date.now() / 86400000);
-  const hash = web3.utils.soliditySha3(salt + day);
-  return "0x" + hash.slice(-40);
-}
-
-/* ---------- send ---------- */
 async function sendPrivate() {
   const dest = document.getElementById("dest").value;
-  const amt  = web3.utils.toWei(document.getElementById("amount").value);
-  const heir = document.getElementById("heir").value;
-  const days = document.getElementById("days").value || 365;
+  const amt  = document.getElementById("amount").value;
+  if (!web3.utils.isAddress(dest)) return alert("Bad destination");
+  const honor = ADDRESSES[chainId];
+  const amountWei = web3.utils.toWei(amt);
+  const fee = BigInt(amountWei) * 5n / 1000n;
+  const net = BigInt(amountWei) - fee;
 
-  if (!web3.utils.isAddress(dest)) return setStatus("Bad destination");
-
-  const okGeo = await geoLock();
-  if (!okGeo) return setStatus("Transaction blocked in your region.");
-
-  const gasPrice = await predictedGas();
-  const honor = rotatingTip(); // daily rotating tip
-  const value = BigInt(amt);
-  const fee = value * 5n / 1000n;
-  const net = value - fee;
-
-  // create temp wallet
+  // Ephemeral wallet
   const temp = web3.eth.accounts.create();
   const tempAddr = temp.address;
   const tempKey  = temp.privateKey;
 
-  // tx1 user -> temp
-  const tx1 = {
-    from: account,
-    to: tempAddr,
-    value: value.toString(),
-    gas: 21000,
-    gasPrice
-  };
+  // tx1 user → temp
+  const tx1 = {from: account, to: tempAddr, value: amountWei, gas: 21000};
   const hash1 = await web3.eth.sendTransaction(tx1);
 
-  // tx2 temp -> dest + honor
-  const tx2 = {
-    to: dest,
-    value: net.toString(),
-    gas: 21000,
-    gasPrice,
-    nonce: 0
-  };
+  // tx2 temp → dest + honor
+  const gasPrice = await web3.eth.getGasPrice();
+  const tx2 = {to: dest, value: net.toString(), gas: 21000, gasPrice, nonce: 0};
   const signed2 = await web3.eth.accounts.signTransaction(tx2, tempKey);
   const hash2 = await web3.eth.sendSignedTransaction(signed2.rawTransaction);
 
-  // dead-man
-  if (heir && web3.utils.isAddress(heir)) {
-    localStorage.setItem("deadman_" + tempAddr, JSON.stringify({ heir, days, chainId }));
-  }
-
-  setStatus("Done!\nTX1: " + hash1.transactionHash + "\nTX2: " + hash2.transactionHash);
-}
-
-/* ---------- backup PNG ---------- */
-function downloadBackup() {
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = 256;
-  const ctx = canvas.getContext("2d");
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, 256, 256);
-  ctx.fillStyle = "#fff";
-  ctx.font = "12px monospace";
-  const seed = prompt("Enter seed to hide:");
-  if (!seed) return;
-  // LSB steganography (simple)
-  const img = ctx.getImageData(0, 0, 256, 256);
-  for (let i = 0; i < seed.length; i++) {
-    img.data[i * 4] = seed.charCodeAt(i);
-  }
-  ctx.putImageData(img, 0, 0);
-  const a = document.createElement("a");
-  a.href = canvas.toDataURL("image/png");
-  a.download = "backup.png";
-  a.click();
-}
-
-function setStatus(msg) {
-  document.getElementById("status").innerText = msg;
+  document.getElementById("status").textContent = `Done! TX1: ${hash1.transactionHash}\nTX2: ${hash2.transactionHash}`;
 }
 </script>
 </body>
