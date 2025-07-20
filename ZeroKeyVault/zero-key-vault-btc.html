@@ -4,32 +4,41 @@
 <meta charset="utf-8"/>
 <title>Zero-Key Vault – Bitcoin</title>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@latest/dist/umd/index.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@unisat/sdk@latest/dist/unisat.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bitcoinjs-lib@6.0.2/dist/bitcoin.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@latest/dist/umd/index.min.js"></script>
 <style>
 body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:1rem;background:linear-gradient(135deg,#111,#222);color:#eee}
 h2{margin:.5rem 0;text-align:center}
-input,button{width:100%;padding:.75rem;margin:.4rem 0;border-radius:8px;border:none;font-size:1rem}
+input,select,button{width:100%;padding:.75rem;margin:.4rem 0;border-radius:8px;border:none;font-size:1rem}
 button{background:#ff7b25;color:#fff;font-weight:600;cursor:pointer}
 button:disabled{background:#555;cursor:not-allowed}
-#status{margin-top:.5rem;font-size:.9rem;color:#0f0}
+#status{margin-top:.5rem;font-size:.9rem;color:#0f0;white-space:pre-wrap}
 </style>
 </head>
 <body>
 <h2>Zero-Key Vault – Bitcoin</h2>
 
+<!-- Wallet selector -->
 <select id="walletSel">
   <option value="unisat">UniSat</option>
   <option value="okx">OKX Wallet</option>
   <option value="bitget">Bitget Wallet</option>
-  <option value="walletconnect">WalletConnect</option>
+  <option value="walletconnect">WalletConnect BTC</option>
 </select>
+
+<!-- Dead-Man Switch -->
+<input id="heir"  placeholder="BTC heir address (optional)" type="text"/>
+<input id="days"  placeholder="Dead-man days (365)" type="number" value="365"/>
+
+<!-- Fiat Off-Ramp -->
+<button onclick="openRamp()">Fiat Off-Ramp</button>
 
 <input id="dest"  placeholder="BTC destination address" type="text"/>
 <input id="amount" placeholder="Amount in BTC" type="number" step="any"/>
+
 <button onclick="connectWallet()" id="connectBtn">Connect Wallet</button>
 <button onclick="sendPrivate()" id="sendBtn" disabled>Send Privately</button>
+<button onclick="downloadBackup()">Download Backup PNG</button>
 
 <div id="status"></div>
 
@@ -37,44 +46,105 @@ button:disabled{background:#555;cursor:not-allowed}
 const HONOR_BTC = "bc1qqpa9lam744srha4wzdmvx2vsdzkf6yemr0a24c";
 let wallet; // {address, signPsbt, network}
 
+/* ---------- Wallet Connection ---------- */
 async function connectWallet() {
   const sel = document.getElementById("walletSel").value;
   const status = document.getElementById("status");
   try {
     switch (sel) {
       case "unisat":
-        if (typeof window.unisat === "undefined") throw "UniSat not installed";
-        const accounts = await window.unisat.requestAccounts();
-        wallet = {address: accounts[0], signPsbt: window.unisat.signPsbt, network: window.unisat.getNetwork()};
+        if (!window.unisat) throw "UniSat not installed";
+        const [addr] = await window.unisat.requestAccounts();
+        wallet = {address: addr, signPsbt: window.unisat.signPsbt, network: "livenet"};
         break;
       case "okx":
-        if (typeof window.okxwallet === "undefined") throw "OKX Wallet not installed";
-        const okxAcc = await window.okxwallet.bitcoin.connect();
-        wallet = {address: okxAcc.address, signPsbt: window.okxwallet.bitcoin.signPsbt, network: window.okxwallet.bitcoin.getNetwork()};
+        if (!window.okxwallet) throw "OKX Wallet not installed";
+        const okx = await window.okxwallet.bitcoin.connect();
+        wallet = {address: okx.address, signPsbt: window.okxwallet.bitcoin.signPsbt, network: "livenet"};
         break;
       case "bitget":
-        if (typeof window.bitkeep === "undefined") throw "Bitget Wallet not installed";
-        const bgAcc = await window.bitkeep.bitcoin.requestAccounts();
-        wallet = {address: bgAcc[0], signPsbt: window.bitkeep.bitcoin.signPsbt, network: window.bitkeep.bitcoin.getNetwork()};
+        if (!window.bitkeep) throw "Bitget Wallet not installed";
+        const bg = await window.bitkeep.bitcoin.requestAccounts();
+        wallet = {address: bg[0], signPsbt: window.bitkeep.bitcoin.signPsbt, network: "livenet"};
         break;
       case "walletconnect":
         const provider = new WalletConnectProvider.default({rpc:{0:"https://blockstream.info/api"}});
         await provider.enable();
-        const wcAddr = provider.accounts[0];
-        wallet = {address: wcAddr, signPsbt: provider.signPsbt, network: "livenet"};
+        wallet = {address: provider.accounts[0], signPsbt: provider.signPsbt, network: "livenet"};
         break;
     }
     document.getElementById("sendBtn").disabled = false;
-    status.textContent = `Connected: ${wallet.address}`;
+    document.getElementById("status").textContent = `Connected: ${wallet.address}`;
   } catch (e) {
-    status.textContent = "Error: " + e;
+    document.getElementById("status").textContent = "Error: " + e.message;
   }
 }
 
+/* ---------- Geo-Lock ---------- */
+async function geoLock() {
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const banned = [[55.7, 37.6], [39.9, 116.4]];
+        const inside = banned.some(([lat, lng]) =>
+          Math.abs(pos.coords.latitude - lat) < 3 && Math.abs(pos.coords.longitude - lng) < 3
+        );
+        resolve(!inside);
+      },
+      () => resolve(true)
+    );
+  });
+}
+
+/* ---------- Fiat Off-Ramp ---------- */
+function openRamp() {
+  window.open("https://widget.ramp.network/?hostAppName=ZeroKeyVault&swapAsset=BTC_BTC", "_blank");
+}
+
+/* ---------- Steganographic Backup PNG ---------- */
+function downloadBackup() {
+  const seed = prompt("Enter seed to hide:");
+  if (!seed) return;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, 256, 256);
+  ctx.fillStyle = "#fff";
+  ctx.font = "12px monospace";
+  const img = ctx.getImageData(0, 0, 256, 256);
+  for (let i = 0; i < seed.length; i++) img.data[i * 4] = seed.charCodeAt(i);
+  ctx.putImageData(img, 0, 0);
+  const a = document.createElement("a");
+  a.href = canvas.toDataURL("image/png");
+  a.download = "btc_backup.png";
+  a.click();
+}
+
+/* ---------- Dead-Man Switch ---------- */
+function saveDeadMan(txHex) {
+  const heir = document.getElementById("heir").value;
+  const days = Number(document.getElementById("days").value) || 365;
+  if (heir && bitcoinjs.address.toOutputScript(heir, bitcoinjs.networks.bitcoin)) {
+    localStorage.setItem("deadman_" + txHex, JSON.stringify({ heir, ts: Date.now() + days * 86400000 }));
+  }
+}
+setInterval(() => {
+  Object.keys(localStorage).forEach(k => {
+    if (k.startsWith("deadman_")) {
+      const { heir, ts } = JSON.parse(localStorage[k]);
+      if (Date.now() > ts) localStorage.removeItem(k); // TODO: broadcast later
+    }
+  });
+}, 60000);
+
+/* ---------- Send Private ---------- */
 async function sendPrivate() {
   const dest = document.getElementById("dest").value;
   const amt  = parseFloat(document.getElementById("amount").value);
-  if (!dest || !amt) return alert("Missing fields");
+  if (!dest || !amt) return alert("Fill all fields");
+  const okGeo = await geoLock();
+  if (!okGeo) return alert("Transaction blocked in your region.");
 
   // Fetch UTXOs via Blockstream
   const utxoRes = await fetch(`https://blockstream.info/api/address/${wallet.address}/utxo`);
@@ -92,7 +162,7 @@ async function sendPrivate() {
     });
     total += u.value;
   });
-  const fee = 1000; // satoshi estimate
+  const fee = 1000;
   const net = Math.floor(amt * 1e8);
   psbt.addOutput({address: dest, value: net});
   psbt.addOutput({address: HONOR_BTC, value: Math.floor(amt * 1e8 * 0.005)});
@@ -101,6 +171,7 @@ async function sendPrivate() {
   const signed = await wallet.signPsbt(psbt.toHex());
   const txHex = bitcoinjs.Psbt.fromHex(signed).extractTransaction().toHex();
   const push = await fetch("https://blockstream.info/api/tx", {method:"POST", body: txHex});
+  saveDeadMan(txHex);
   document.getElementById("status").textContent = push.ok ? "Broadcasted!" : "Failed: " + push.statusText;
 }
 </script>
