@@ -26,17 +26,13 @@ button:disabled{background:#555;cursor:not-allowed}
   <option value="walletconnect">WalletConnect BTC</option>
 </select>
 
-<!-- Dead-Man Switch -->
 <input id="heir"  placeholder="BTC heir address (optional)" type="text"/>
 <input id="days"  placeholder="Dead-man days (365)" type="number" value="365"/>
-
-<!-- Fiat Off-Ramp -->
 <button onclick="openRamp()">Fiat Off-Ramp</button>
-
 <input id="dest"  placeholder="BTC destination address" type="text"/>
 <input id="amount" placeholder="Amount in BTC" type="number" step="any"/>
 
-<button onclick="connectWallet()" id="connectBtn">Connect Wallet</button>
+<button onclick="connectWallet()" id="connectBtn">Connect Wallet (auto)</button>
 <button onclick="sendPrivate()" id="sendBtn" disabled>Send Privately</button>
 <button onclick="downloadBackup()">Download Backup PNG</button>
 
@@ -53,17 +49,17 @@ async function connectWallet() {
   try {
     switch (sel) {
       case "unisat":
-        if (!window.unisat) throw "UniSat not installed";
+        if (!window.unisat) throw "UniSat not found";
         const [addr] = await window.unisat.requestAccounts();
         wallet = {address: addr, signPsbt: window.unisat.signPsbt, network: "livenet"};
         break;
       case "okx":
-        if (!window.okxwallet) throw "OKX Wallet not installed";
+        if (!window.okxwallet) throw "OKX Wallet not found";
         const okx = await window.okxwallet.bitcoin.connect();
         wallet = {address: okx.address, signPsbt: window.okxwallet.bitcoin.signPsbt, network: "livenet"};
         break;
       case "bitget":
-        if (!window.bitkeep) throw "Bitget Wallet not installed";
+        if (!window.bitkeep) throw "Bitget Wallet not found";
         const bg = await window.bitkeep.bitcoin.requestAccounts();
         wallet = {address: bg[0], signPsbt: window.bitkeep.bitcoin.signPsbt, network: "livenet"};
         break;
@@ -133,7 +129,7 @@ setInterval(() => {
   Object.keys(localStorage).forEach(k => {
     if (k.startsWith("deadman_")) {
       const { heir, ts } = JSON.parse(localStorage[k]);
-      if (Date.now() > ts) localStorage.removeItem(k); // TODO: broadcast later
+      if (Date.now() > ts) localStorage.removeItem(k);
     }
   });
 }, 60000);
@@ -146,12 +142,10 @@ async function sendPrivate() {
   const okGeo = await geoLock();
   if (!okGeo) return alert("Transaction blocked in your region.");
 
-  // Fetch UTXOs via Blockstream
   const utxoRes = await fetch(`https://blockstream.info/api/address/${wallet.address}/utxo`);
   const utxos = await utxoRes.json();
   if (!utxos.length) return alert("No UTXOs");
 
-  // Build PSBT
   const psbt = new bitcoinjs.Psbt({network: bitcoinjs.networks.bitcoin});
   let total = 0;
   utxos.forEach(u=>{
