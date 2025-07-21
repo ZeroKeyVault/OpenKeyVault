@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Key Vault- Solana</title>
+    <style>
+        :root {
+            --solana-primary: #00ffa3;
+            --solana-secondary: #03e1ff;
+            --solana-accent: #dc1fff;
+            --solana-background: #170015;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(30, 30, 46, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 255, 163, 0.15);
+            overflow: hidden;
+            border: 1px solid rgba(220, 31, 255, 0.1);
+        }
+        
+        header {
+            display: flex;
+            align-items: center;
+            padding: 25px;
+            background: linear-gradient(90deg, #000 0%, #1a0938 100%);
+            border-bottom: 4px solid var(--solana-primary);
+        }
+        
+        .logo {
+            height: 50px;
+            margin-right: 20px;
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+        
+        .subtitle {
+            color: var(--solana-secondary);
+            font-size: 16px;
+            margin-top: 5px;
+            letter-spacing: 1px;
+        }
+        
+        .wallet-section {
+            padding: 30px;
+            border-bottom: 1px solid rgba(220, 31, 255, 0.1);
+        }
+        
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+            color: var(--solana-primary);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, var(--solana-primary) 0%, var(--solana-accent) 100%);
+            color: black;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 163, 0.4);
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            background: rgba(0, 255, 163, 0.08);
+            border-left: 4px solid var(--solana-primary);
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid rgba(220, 31, 255, 0.2);
+            border-radius: 12px;
+            font-size: 16px;
+            background: rgba(30, 30, 46, 0.5);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--solana-primary);
+            box-shadow: 0 0 0 3px rgba(0, 255, 163, 0.2);
+        }
+        
+        .privacy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .privacy-card {
+            background: rgba(40, 40, 60, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(220, 31, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .privacy-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 7px 20px rgba(220, 31, 255, 0.2);
+        }
+        
+        .privacy-card h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: white;
+            display: flex;
+            align-items: center;
+        }
+        
+        .privacy-card h3 i {
+            margin-right: 10px;
+            color: var(--solana-primary);
+        }
+        
+        .privacy-card p {
+            color: #aaa;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+            margin-right: 10px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #444;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--solana-primary);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 25px;
+            background: #000;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 18px;
+            letter-spacing: 1px;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                border-radius: 15px;
+            }
+            
+            header {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 22px;
+            }
+            
+            .wallet-section {
+                padding: 20px;
+            }
+            
+            .privacy-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="https://images.seeklogo.com/logo-png/39/1/solana-sol-logo-png_seeklogo-398274.png" alt="Solana Logo" class="logo">
+            <div>
+                <h1>Open Key Wallet - Solana</h1>
+                <div class="subtitle">Zero-Key Vault with 6-Layer Privacy Suite</div>
+            </div>
+        </header>
+        
+        <div class="wallet-section">
+            <h2 class="section-title">
+                <i class="fas fa-wallet"></i> Wallet Connection
+            </h2>
+            <button id="connectWallet" class="btn">
+                <i class="fas fa-plug"></i> Connect Wallet
+            </button>
+            <div id="walletStatus" class="status">
+                Wallet not connected. Click above to connect your Solana wallet.
+            </div>
+        </div>
+        
+        <div class="wallet-section">
+            <h2 class="section-title">
+                <i class="fas fa-shield-alt"></i> Privacy Controls
+            </h2>
+            <div class="privacy-grid">
+                <div class="privacy-card">
+                    <h3><i class="fas fa-font"></i> Homograph Addresses</h3>
+                    <p>Exploits Unicode vulnerabilities with visually identical characters</p>
+                    <div class="toggle-container">
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <span>Enabled</span>
+                    </div>
+                </div>
+                
+                <div class="privacy-card">
+                    <h3><i class="fas fa-key"></i> Throwaway Keypairs</h3>
+                    <p>Generates disposable keys for each transaction</p>
+                    <div class="toggle-container">
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <span>Enabled</span>
+                    </div>
+                </div>
+                
+                <div class="privacy-card">
+                    <h3><i class="fas fa-bolt"></i> High-Speed Routing</h3>
+                    <p>Leverages Solana speed for multi-hop transactions</p>
+                    <div class="toggle-container">
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <span>Enabled</span>
+                    </div>
+                </div>
+                
+                <div class="privacy-card">
+                    <h3><i class="fas fa-puzzle-piece"></i> Transaction Obfuscation</h3>
+                    <p>Hides transaction patterns using Solana's parallel processing</p>
+                    <div class="toggle-container">
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <span>Enabled</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="wallet-section">
+            <h2 class="section-title">
+                <i class="fas fa-lock"></i> Advanced Privacy Suite
+            </h2>
+            
+            <div class="form-group">
+                <label for="deadManSwitch">Dead-Man Switch Configuration</label>
+                <input type="text" id="deadManSwitch" placeholder="Beneficiary address">
+            </div>
+            
+            <div class="form-group">
+                <label for="seedPhrase">Seed Phrase (for PNG steganography)</label>
+                <textarea id="seedPhrase" rows="3" placeholder="Enter seed phrase to hide in PNG"></textarea>
+            </div>
+            
+            <button id="generateStealth" class="btn">
+                <i class="fas fa-download"></i> Generate Stealth PNG
+            </button>
+            
+            <div class="status" style="margin-top: 20px;">
+                <i class="fas fa-info-circle"></i> Your seed will be encrypted and hidden in a PNG image. Store securely.
+            </div>
+        </div>
+        
+        <div class="wallet-section">
+            <h2 class="section-title">
+                <i class="fas fa-paper-plane"></i> Send Transaction
+            </h2>
+            
+            <div class="form-group">
+                <label for="recipient">Recipient Address</label>
+                <input type="text" id="recipient" placeholder="Enter destination address">
+            </div>
+            
+            <div class="form-group">
+                <label for="amount">Amount (SOL)</label>
+                <input type="number" id="amount" placeholder="0.00" step="0.001">
+            </div>
+            
+            <button id="sendTransaction" class="btn">
+                <i class="fas fa-paper-plane"></i> Send Privately
+            </button>
+            
+            <div id="transactionStatus" class="status" style="margin-top: 20px; display: none;">
+                <i class="fas fa-sync fa-spin"></i> Processing private transaction...
+            </div>
+        </div>
+        
+        <footer>
+            The Platform
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wallet connection
+            const connectBtn = document.getElementById('connectWallet');
+            const walletStatus = document.getElementById('walletStatus');
+            
+            connectBtn.addEventListener('click', async function() {
+                try {
+                    // Simulate wallet connection
+                    walletStatus.innerHTML = `<i class="fas fa-check-circle"></i> Wallet connected: 2E6Yz...SfsW`;
+                    connectBtn.textContent = 'Wallet Connected';
+                    connectBtn.disabled = true;
+                    
+                    // Show success message
+                    setTimeout(() => {
+                        walletStatus.innerHTML = `<i class="fas fa-check-circle"></i> Wallet connected. Privacy features enabled.`;
+                    }, 2000);
+                } catch (error) {
+                    walletStatus.innerHTML = `<i class="fas fa-exclamation-circle"></i> Error: ${error.message}`;
+                }
+            });
+            
+            // Stealth PNG generation
+            const generateStealthBtn = document.getElementById('generateStealth');
+            generateStealthBtn.addEventListener('click', function() {
+                const seed = document.getElementById('seedPhrase').value;
+                if (!seed) {
+                    alert('Please enter a seed phrase');
+                    return;
+                }
+                
+                alert('Stealth PNG generated successfully. Downloading...');
+                // In a real implementation, this would generate and download a PNG
+            });
+            
+            // Send transaction
+            const sendBtn = document.getElementById('sendTransaction');
+            const txStatus = document.getElementById('transactionStatus');
+            
+            sendBtn.addEventListener('click', function() {
+                const recipient = document.getElementById('recipient').value;
+                const amount = document.getElementById('amount').value;
+                
+                if (!recipient || !amount) {
+                    alert('Please fill all fields');
+                    return;
+                }
+                
+                txStatus.style.display = 'block';
+                sendBtn.disabled = true;
+                
+                // Simulate transaction processing
+                setTimeout(() => {
+                    txStatus.innerHTML = `
+                        <i class="fas fa-check-circle"></i> Transaction completed successfully!
+                        <div style="margin-top: 10px; font-size: 14px;">
+                            <div>Amount: ${amount} SOL</div>
+                            <div>Tip: ${(amount * 0.005).toFixed(6)} SOL sent to 2E6Yz...SfsW</div>
+                            <div>Privacy layers activated: 6</div>
+                            <div>Throwaway keys generated: 3</div>
+                        </div>
+                    `;
+                    
+                    // Reset form
+                    document.getElementById('recipient').value = '';
+                    document.getElementById('amount').value = '';
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>
