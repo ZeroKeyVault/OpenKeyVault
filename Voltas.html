@@ -6,6 +6,7 @@
     <title>The Platform</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
+        /* Existing CSS styles remain unchanged */
         * {
             margin: 0;
             padding: 0;
@@ -606,7 +607,7 @@
                 <label for="vaultUrl">Vault URL</label>
                 <input type="text" id="vaultUrl" placeholder="https://theplatform.com/vault/abc123...">
             </div>
-            <div class="form-group" id="privateNameGroup" style="display: none;">
+            <div class="form-group" id="privateNameGroup">
                 <label for="personalVaultName">Your Name for this Vault</label>
                 <input type="text" id="personalVaultName" placeholder="My Chat with Alex">
             </div>
@@ -974,16 +975,37 @@
             
             // Render vaults
             renderVaults();
-            navigateTo('main');
+            
+            // Automatically open the vault after joining
+            openVault(vaultId);
             
             showNotification(`Joined ${isPrivate ? 'private' : 'public'} vault: ${vault.name}`);
             
             // Attempt to connect to vault creator
-            const creatorId = vaultUrl.split('/').pop();
+            const creatorId = extractCreatorId(vaultUrl);
             if (creatorId && creatorId !== state.userId) {
+                console.log('Connecting to creator:', creatorId);
                 const conn = state.peer.connect(creatorId);
                 setupConnection(conn);
             }
+        }
+        
+        // Extract creator ID from URL
+        function extractCreatorId(url) {
+            try {
+                const urlObj = new URL(url);
+                const hashParts = urlObj.hash.split('/');
+                if (hashParts.length >= 4) {
+                    const creatorId = hashParts[3];
+                    return creatorId.includes('?') ? creatorId.split('?')[0] : creatorId;
+                }
+            } catch (e) {
+                console.error('Error parsing URL:', e);
+            }
+            
+            // Fallback to regex extraction
+            const match = url.match(/vault\/[^/]+\/([^/?]+)/);
+            return match && match[1] ? match[1] : null;
         }
         
         // Save state to localStorage
@@ -1333,6 +1355,7 @@
         function broadcastMessage(data) {
             Object.values(state.connections).forEach(conn => {
                 if (conn.open) {
+                    console.log('Broadcasting to:', conn.peer);
                     conn.send(data);
                 }
             });
@@ -1460,7 +1483,13 @@
                 const parts = window.location.hash.split('/');
                 if (parts.length >= 3) {
                     const vaultId = parts[2];
-                    const creatorId = parts[3];
+                    let creatorId = parts.length >= 4 ? parts[3] : '';
+                    
+                    // Remove query parameters from creator ID
+                    if (creatorId.includes('?')) {
+                        creatorId = creatorId.split('?')[0];
+                    }
+                    
                     const isPrivate = window.location.hash.includes('private=true');
                     
                     const vault = state.vaults.find(v => v.id === vaultId);
@@ -1469,14 +1498,13 @@
                     } else {
                         navigateTo('joinVault');
                         document.getElementById('vaultUrl').value = window.location.href;
-                        
-                        // Show personal name field only for private vaults
                         document.getElementById('privateNameGroup').style.display = 
                             isPrivate ? 'block' : 'none';
                     }
                     
                     // Connect to the creator
                     if (creatorId && creatorId !== state.userId) {
+                        console.log('Connecting to creator from URL:', creatorId);
                         const conn = state.peer.connect(creatorId);
                         setupConnection(conn);
                     }
@@ -1499,8 +1527,15 @@
             });
             
             document.getElementById('joinVault').addEventListener('click', () => {
-                document.getElementById('privateNameGroup').style.display = 'none';
+                document.getElementById('privateNameGroup').style.display = 'block';
                 navigateTo('joinVault');
+            });
+            
+            // Show/hide private name field based on URL
+            document.getElementById('vaultUrl').addEventListener('input', function() {
+                const url = this.value;
+                const isPrivate = url.includes('private=true');
+                document.getElementById('privateNameGroup').style.display = isPrivate ? 'block' : 'none';
             });
             
             document.getElementById('createVaultBtn').addEventListener('click', () => {
