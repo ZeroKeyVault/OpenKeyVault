@@ -6,7 +6,7 @@
     <title>The Platform</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        /* Existing CSS styles remain unchanged */
+        /* All CSS styles remain unchanged */
         * {
             margin: 0;
             padding: 0;
@@ -752,6 +752,11 @@
             state.peer.on('open', id => {
                 console.log('Peer connected with ID:', id);
                 updateConnectionStatus('connected', 'Connected to peer network');
+                
+                // Reconnect to existing vault when reopening
+                if (state.currentVault) {
+                    reconnectToVault();
+                }
             });
             
             state.peer.on('connection', conn => {
@@ -779,6 +784,22 @@
                     updateConnectionStatus('connecting', 'Reconnecting...');
                 }, 2000);
             });
+        }
+        
+        // Reconnect to vault when reopening the app
+        function reconnectToVault() {
+            if (!state.currentVault) return;
+            
+            // Reconnect to all known participants
+            Object.values(state.connections).forEach(conn => {
+                if (!conn.open) {
+                    const newConn = state.peer.connect(conn.peer);
+                    setupConnection(newConn);
+                }
+            });
+            
+            // Broadcast vault info to reestablish connections
+            broadcastVaultInfo();
         }
         
         // Set up a connection with another peer
@@ -964,7 +985,8 @@
                 participants: [state.userId],
                 messages: [],
                 personalName: isPrivate ? personalName : '',
-                isPrivate: isPrivate
+                isPrivate: isPrivate,
+                creator: extractCreatorId(vaultUrl) // Store creator ID for reconnection
             };
             
             // Add to vaults
@@ -982,10 +1004,9 @@
             showNotification(`Joined ${isPrivate ? 'private' : 'public'} vault: ${vault.name}`);
             
             // Attempt to connect to vault creator
-            const creatorId = extractCreatorId(vaultUrl);
-            if (creatorId && creatorId !== state.userId) {
-                console.log('Connecting to creator:', creatorId);
-                const conn = state.peer.connect(creatorId);
+            if (vault.creator && vault.creator !== state.userId) {
+                console.log('Connecting to creator:', vault.creator);
+                const conn = state.peer.connect(vault.creator);
                 setupConnection(conn);
             }
         }
@@ -1099,8 +1120,15 @@
             // Render messages
             renderMessages(vault.messages);
             
-            // Broadcast connection to all participants
-            broadcastVaultInfo();
+            // If PeerJS is ready, reconnect to participants
+            if (state.peer && state.peer.open) {
+                reconnectToVault();
+            } else {
+                // If PeerJS isn't ready yet, wait for it to open
+                state.peer.on('open', () => {
+                    reconnectToVault();
+                });
+            }
             
             navigateTo('vault');
         }
