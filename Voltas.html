@@ -19,7 +19,11 @@
             --gray-100: #f5f5f5;
             --gray-200: #eeeeee;
             --gray-300: #e0e0e0;
+            --gray-400: #d0d0d0;
+            --gray-500: #b0b0b0;
+            --gray-600: #808080;
             --gray-700: #555555;
+            --gray-800: #404040;
             --gray-900: #333333;
             --accent: #4a6fa5;
             --success: #4CAF50;
@@ -63,6 +67,7 @@
         h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
+            color: var(--gray-800);
         }
         
         .app-container {
@@ -78,6 +83,7 @@
             border-radius: 8px;
             background-color: var(--bg-light);
             flex: 1;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
         }
         
         .view.active {
@@ -89,20 +95,26 @@
             background-color: var(--gray-300);
             color: var(--gray-900);
             border: none;
-            padding: 10px 15px;
-            border-radius: 4px;
+            padding: 12px 18px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 1rem;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
             margin: 5px;
+            font-weight: 500;
         }
         
         .btn:hover {
-            background-color: var(--gray-200);
+            background-color: var(--gray-400);
+            transform: translateY(-1px);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
         }
         
         .btn-primary {
-            background-color: var(--gray-700);
+            background-color: var(--gray-800);
             color: var(--bg-white);
         }
         
@@ -111,56 +123,68 @@
         }
         
         .btn-success {
-            background-color: var(--success);
+            background-color: var(--gray-700);
             color: white;
         }
         
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-weight: 600;
+            color: var(--gray-700);
         }
         
         input, select, textarea {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid var(--gray-300);
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 1rem;
             background-color: var(--bg-white);
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--gray-500);
+            box-shadow: 0 0 0 2px rgba(128,128,128,0.1);
         }
         
         .vault-card {
             background-color: var(--bg-white);
             border: 1px solid var(--gray-300);
             border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
+            padding: 18px;
+            margin-bottom: 18px;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
         }
         
         .vault-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            border-color: var(--gray-400);
         }
         
         .vault-card h3 {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            color: var(--gray-800);
         }
         
         .vault-meta {
             display: flex;
             justify-content: space-between;
-            color: var(--gray-700);
+            color: var(--gray-600);
             font-size: 0.9rem;
+            margin-top: 8px;
         }
         
         .message-container {
@@ -178,14 +202,23 @@
             border-radius: 8px;
             padding: 15px;
             background-color: var(--bg-white);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
         
         .message {
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 8px;
+            padding: 14px;
+            border-radius: 10px;
             background-color: var(--gray-100);
-            max-width: 80%;
+            max-width: 85%;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .message.self {
@@ -197,47 +230,89 @@
             display: flex;
             justify-content: space-between;
             font-size: 0.85rem;
-            margin-bottom: 5px;
-            color: var(--gray-700);
+            margin-bottom: 8px;
+            color: var(--gray-600);
         }
         
         .file-upload {
             margin: 15px 0;
-            padding: 10px;
+            padding: 15px;
             border: 1px dashed var(--gray-300);
-            border-radius: 4px;
+            border-radius: 8px;
             text-align: center;
             background-color: var(--bg-white);
+            transition: border-color 0.3s;
+        }
+        
+        .file-upload:hover {
+            border-color: var(--gray-500);
         }
         
         .file-preview {
             display: flex;
             align-items: center;
-            margin-top: 10px;
-            padding: 8px;
+            margin-top: 15px;
+            padding: 12px;
             background-color: var(--gray-100);
-            border-radius: 4px;
+            border-radius: 8px;
+            border: 1px solid var(--gray-200);
         }
         
         .file-preview img {
-            max-width: 50px;
-            max-height: 50px;
-            margin-right: 10px;
-            border-radius: 4px;
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            margin-right: 15px;
+            border-radius: 6px;
+            border: 1px solid var(--gray-300);
+        }
+        
+        .file-info {
+            flex: 1;
+        }
+        
+        .file-info h4 {
+            margin-bottom: 5px;
+            color: var(--gray-800);
+        }
+        
+        .file-info p {
+            color: var(--gray-600);
+            font-size: 0.9rem;
+        }
+        
+        .download-btn {
+            background-color: var(--gray-800);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+        
+        .download-btn:hover {
+            background-color: var(--gray-900);
         }
         
         .encryption-indicator {
             display: flex;
             align-items: center;
-            margin-top: 10px;
-            color: var(--success);
+            margin-top: 15px;
+            color: var(--gray-700);
             font-size: 0.9rem;
+            background-color: var(--gray-100);
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid var(--gray-200);
         }
         
         .encryption-indicator::before {
             content: "✓";
-            margin-right: 5px;
+            margin-right: 8px;
             font-weight: bold;
+            color: var(--success);
         }
         
         footer {
@@ -245,7 +320,7 @@
             margin-top: 40px;
             padding: 20px 0;
             border-top: 1px solid var(--gray-300);
-            color: var(--gray-700);
+            color: var(--gray-600);
             font-size: 0.9rem;
         }
         
@@ -253,45 +328,56 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 15px;
-            background-color: var(--gray-900);
+            padding: 15px 20px;
+            background-color: var(--gray-800);
             color: white;
-            border-radius: 4px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             display: none;
             z-index: 1000;
             max-width: 400px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
         
         .vault-type {
             display: inline-block;
-            padding: 3px 8px;
-            border-radius: 12px;
+            padding: 4px 10px;
+            border-radius: 14px;
             font-size: 0.8rem;
+            font-weight: 500;
         }
         
         .private-vault {
-            background-color: #e0f7fa;
-            color: #00838f;
+            background-color: var(--gray-200);
+            color: var(--gray-700);
         }
         
         .public-vault {
-            background-color: #f1f8e9;
-            color: #689f38;
+            background-color: var(--gray-300);
+            color: var(--gray-800);
         }
         
         .connection-status {
             display: flex;
             align-items: center;
-            margin-top: 10px;
+            margin-top: 15px;
             font-size: 0.9rem;
+            background-color: var(--gray-100);
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid var(--gray-200);
         }
         
         .status-dot {
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            margin-right: 5px;
+            margin-right: 8px;
         }
         
         .status-connected {
@@ -307,8 +393,8 @@
         }
         
         .progress-container {
-            margin-top: 10px;
-            height: 5px;
+            margin-top: 15px;
+            height: 6px;
             background-color: var(--gray-200);
             border-radius: 3px;
             overflow: hidden;
@@ -316,60 +402,117 @@
         
         .progress-bar {
             height: 100%;
-            background-color: var(--accent);
+            background-color: var(--gray-700);
             width: 0%;
-            transition: width 0.3s;
+            transition: width 0.3s ease;
         }
         
         .action-buttons {
             display: flex;
-            gap: 10px;
-            margin-top: 10px;
+            gap: 12px;
+            margin-top: 15px;
         }
         
         .vault-id-display {
-            font-size: 0.8rem;
-            color: var(--gray-700);
+            font-size: 0.85rem;
+            color: var(--gray-600);
             word-break: break-all;
-            margin-top: 5px;
+            margin-top: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background-color: var(--gray-100);
+            padding: 8px 12px;
+            border-radius: 6px;
         }
         
         .copy-btn {
             background: var(--gray-300);
             border: none;
-            padding: 3px 8px;
+            padding: 5px 10px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
+            transition: background-color 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background-color: var(--gray-400);
         }
         
         .empty-state {
             text-align: center;
             padding: 40px 20px;
-            color: var(--gray-700);
+            color: var(--gray-600);
         }
         
         .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            opacity: 0.3;
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            opacity: 0.2;
+            color: var(--gray-600);
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: var(--gray-700);
         }
         
         .url-display {
             background-color: var(--gray-100);
-            padding: 10px;
-            border-radius: 4px;
-            margin: 15px 0;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin: 20px 0;
             word-break: break-all;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            border: 1px solid var(--gray-200);
+        }
+        
+        .message-input-container {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 14px;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: var(--bg-white);
+            resize: none;
+            min-height: 60px;
+            transition: border-color 0.3s;
+        }
+        
+        .message-input:focus {
+            outline: none;
+            border-color: var(--gray-500);
+            box-shadow: 0 0 0 2px rgba(128,128,128,0.1);
+        }
+        
+        .send-btn {
+            background-color: var(--gray-800);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .send-btn:hover {
+            background-color: var(--gray-900);
         }
         
         @media (max-width: 768px) {
             body {
-                padding: 10px;
+                padding: 15px;
             }
             
             .message {
@@ -378,6 +521,14 @@
             
             .action-buttons {
                 flex-direction: column;
+            }
+            
+            .message-input-container {
+                flex-direction: column;
+            }
+            
+            .send-btn {
+                height: 50px;
             }
         }
     </style>
@@ -487,14 +638,14 @@
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <textarea id="messageInput" placeholder="Type your secure message here..." rows="3"></textarea>
+                <div class="message-input-container">
+                    <textarea id="messageInput" class="message-input" placeholder="Type your secure message here..."></textarea>
+                    <button id="sendMessageBtn" class="send-btn">Send</button>
                 </div>
-                
-                <div class="action-buttons">
-                    <button id="sendMessageBtn" class="btn btn-primary">Send Encrypted Message</button>
-                    <button id="leaveVault" class="btn">Leave Vault</button>
-                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="leaveVault" class="btn">Leave Vault</button>
             </div>
             
             <div class="encryption-indicator">All messages are end-to-end encrypted</div>
@@ -521,7 +672,8 @@
             peer: null,
             connections: {},
             currentFile: null,
-            vaultType: null
+            vaultType: null,
+            fileStorage: {}
         };
         
         // PeerJS configuration
@@ -669,10 +821,12 @@
             
             switch(data.type) {
                 case 'message':
+                    // Simulate encryption - in a real app, this would be decrypted
+                    const decryptedText = decryptMessage(data.text);
                     addMessageToVault({
                         id: 'msg-' + Date.now(),
                         sender: data.sender,
-                        text: data.text,
+                        text: decryptedText,
                         timestamp: new Date(),
                         isFile: false
                     });
@@ -702,7 +856,9 @@
                         if (state.currentFile.received >= state.currentFile.size) {
                             // File transfer complete
                             const file = new Blob(state.currentFile.chunks, {type: state.currentFile.type});
-                            saveFile(file, state.currentFile.name);
+                            
+                            // Store file for download
+                            state.fileStorage[data.fileId] = file;
                             
                             addMessageToVault({
                                 id: 'file-' + Date.now(),
@@ -710,6 +866,7 @@
                                 fileName: state.currentFile.name,
                                 fileType: state.currentFile.type,
                                 fileSize: state.currentFile.size,
+                                fileId: data.fileId,
                                 timestamp: new Date(),
                                 isFile: true
                             });
@@ -728,6 +885,18 @@
                     }
                     break;
             }
+        }
+        
+        // Simulate message encryption
+        function encryptMessage(text) {
+            // In a real app, this would use WebCrypto API
+            return btoa(unescape(encodeURIComponent(text)));
+        }
+        
+        // Simulate message decryption
+        function decryptMessage(text) {
+            // In a real app, this would use WebCrypto API
+            return decodeURIComponent(escape(atob(text)));
         }
         
         // Create a vault
@@ -938,12 +1107,17 @@
                 if (msg.isFile) {
                     content = `
                         <div class="file-message">
-                            <strong>📎 File:</strong> ${msg.fileName} (${formatFileSize(msg.fileSize)})
-                            <div><small>${msg.fileType}</small></div>
+                            <div class="file-preview">
+                                <div class="file-info">
+                                    <h4>📎 ${msg.fileName}</h4>
+                                    <p>${formatFileSize(msg.fileSize)} · ${msg.fileType}</p>
+                                </div>
+                                <button class="download-btn" data-fileid="${msg.fileId}">Download</button>
+                            </div>
                         </div>
                     `;
                 } else {
-                    content = `<div>${msg.text}</div>`;
+                    content = `<div class="message-content">${msg.text}</div>`;
                 }
                 
                 messageDiv.innerHTML = `
@@ -957,8 +1131,35 @@
                 messageList.appendChild(messageDiv);
             });
             
+            // Add download event listeners
+            document.querySelectorAll('.download-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const fileId = e.target.dataset.fileid;
+                    downloadFile(fileId);
+                });
+            });
+            
             // Scroll to bottom
             messageList.scrollTop = messageList.scrollHeight;
+        }
+        
+        // Download a file
+        function downloadFile(fileId) {
+            const file = state.fileStorage[fileId];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `file_${Date.now()}`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 0);
+            } else {
+                showNotification('File no longer available for download');
+            }
         }
         
         // Format expiration text
@@ -991,6 +1192,9 @@
                 fileInput.value = '';
                 document.getElementById('filePreview').innerHTML = '';
             } else {
+                // Encrypt the message
+                const encryptedText = encryptMessage(text);
+                
                 // Send text message
                 const message = {
                     id: 'msg-' + Date.now(),
@@ -1007,7 +1211,7 @@
                 broadcastMessage({
                     type: 'message',
                     sender: state.userId,
-                    text: text
+                    text: encryptedText
                 });
                 
                 // Save state
@@ -1018,6 +1222,7 @@
                 
                 // Clear input
                 messageInput.value = '';
+                messageInput.focus();
             }
         }
         
@@ -1042,9 +1247,10 @@
             }
             
             const fileInfo = document.createElement('div');
+            fileInfo.className = 'file-info';
             fileInfo.innerHTML = `
-                <div><strong>${file.name}</strong></div>
-                <div>${file.type} - ${formatFileSize(file.size)}</div>
+                <h4>${file.name}</h4>
+                <p>${file.type} - ${formatFileSize(file.size)}</p>
             `;
             
             preview.appendChild(fileInfo);
@@ -1082,9 +1288,13 @@
                         fileName: file.name,
                         fileType: file.type,
                         fileSize: file.size,
+                        fileId: fileId,
                         timestamp: new Date(),
                         isFile: true
                     });
+                    
+                    // Store file for download
+                    state.fileStorage[fileId] = file;
                     return;
                 }
                 
@@ -1168,20 +1378,6 @@
             statusText.textContent = text;
         }
         
-        // Save file to disk
-        function saveFile(blob, fileName) {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 0);
-        }
-        
         // Copy vault URL to clipboard
         function copyVaultUrl(vaultId) {
             const vault = state.vaults.find(v => v.id === vaultId);
@@ -1194,6 +1390,9 @@
             
             navigator.clipboard.writeText(url).then(() => {
                 showNotification('Vault URL copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                showNotification('Failed to copy URL');
             });
         }
         
@@ -1244,9 +1443,10 @@
                 }
                 
                 const fileInfo = document.createElement('div');
+                fileInfo.className = 'file-info';
                 fileInfo.innerHTML = `
-                    <div><strong>${file.name}</strong></div>
-                    <div>${file.type} - ${formatFileSize(file.size)}</div>
+                    <h4>${file.name}</h4>
+                    <p>${file.type} - ${formatFileSize(file.size)}</p>
                 `;
                 
                 preview.appendChild(fileInfo);
@@ -1339,10 +1539,6 @@
             
             document.getElementById('sendMessageBtn').addEventListener('click', sendMessage);
             
-            document.getElementById('leaveVault').addEventListener('click', () => {
-                navigateTo('main');
-            });
-            
             document.getElementById('messageInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -1366,6 +1562,10 @@
             });
             
             document.getElementById('shareCancel').addEventListener('click', () => {
+                navigateTo('main');
+            });
+            
+            document.getElementById('leaveVault').addEventListener('click', () => {
                 navigateTo('main');
             });
         }
