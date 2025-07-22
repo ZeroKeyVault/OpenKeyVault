@@ -43,6 +43,21 @@
             margin-bottom: 30px;
             padding: 20px 0;
             border-bottom: 1px solid var(--gray-300);
+            position: relative;
+        }
+        
+        .back-btn {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--gray-700);
+            display: flex;
+            align-items: center;
         }
         
         h1 {
@@ -317,12 +332,16 @@
             color: var(--gray-700);
             word-break: break-all;
             margin-top: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .copy-btn {
-            background: none;
+            background: var(--gray-300);
             border: none;
-            color: var(--accent);
+            padding: 3px 8px;
+            border-radius: 4px;
             cursor: pointer;
             font-size: 0.8rem;
         }
@@ -339,6 +358,15 @@
             opacity: 0.3;
         }
         
+        .url-display {
+            background-color: var(--gray-100);
+            padding: 10px;
+            border-radius: 4px;
+            margin: 15px 0;
+            word-break: break-all;
+            font-size: 0.9rem;
+        }
+        
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -347,11 +375,16 @@
             .message {
                 max-width: 90%;
             }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
     <header>
+        <button id="headerBackBtn" class="back-btn" style="display: none;">← Back</button>
         <h1>The Platform</h1>
         <p>Secure Peer-to-Peer Communication</p>
     </header>
@@ -378,15 +411,8 @@
         <div id="createVaultView" class="view">
             <h2>Create New Vault</h2>
             <div class="form-group">
-                <label for="vaultName">Vault Name (Only you will see this)</label>
+                <label id="vaultNameLabel" for="vaultName">Vault Name (Only you will see this)</label>
                 <input type="text" id="vaultName" placeholder="My Secret Conversations">
-            </div>
-            <div class="form-group">
-                <label for="vaultType">Vault Type</label>
-                <select id="vaultType">
-                    <option value="private">Private Vault (Direct Message)</option>
-                    <option value="public">Public Vault (Group)</option>
-                </select>
             </div>
             <div class="form-group">
                 <label for="expiration">Expiration Time</label>
@@ -407,6 +433,21 @@
             </div>
         </div>
         
+        <!-- Share Vault View -->
+        <div id="shareVaultView" class="view">
+            <h2>Your Vault is Ready!</h2>
+            <div class="form-group">
+                <label>Share this URL:</label>
+                <div class="url-display" id="vaultUrlDisplay">Generating URL...</div>
+            </div>
+            <p id="vaultTypeInfo" class="vault-meta"></p>
+            <div class="action-buttons">
+                <button id="copyVaultUrl" class="btn btn-primary">Copy URL</button>
+                <button id="goToVaultBtn" class="btn">Go to Vault</button>
+                <button id="shareCancel" class="btn">Back to Main</button>
+            </div>
+        </div>
+        
         <!-- Join Vault View -->
         <div id="joinVaultView" class="view">
             <h2>Join a Vault</h2>
@@ -414,7 +455,7 @@
                 <label for="vaultUrl">Vault URL</label>
                 <input type="text" id="vaultUrl" placeholder="https://theplatform.com/vault/abc123...">
             </div>
-            <div class="form-group">
+            <div class="form-group" id="privateNameGroup" style="display: none;">
                 <label for="personalVaultName">Your Name for this Vault</label>
                 <input type="text" id="personalVaultName" placeholder="My Chat with Alex">
             </div>
@@ -479,7 +520,8 @@
             currentVault: null,
             peer: null,
             connections: {},
-            currentFile: null
+            currentFile: null,
+            vaultType: null
         };
         
         // PeerJS configuration
@@ -487,7 +529,7 @@
             host: '0.peerjs.com',
             port: 443,
             secure: true,
-            debug: 3
+            debug: 2
         };
         
         // Initialize the application
@@ -506,6 +548,42 @@
             
             // Check for URL hash to auto-join a vault
             handleInitialVaultJoin();
+            
+            // Set up back button
+            document.getElementById('headerBackBtn').addEventListener('click', navigateBack);
+        }
+        
+        // Navigation history
+        const navigationHistory = [];
+        
+        // Navigate to a view
+        function navigateTo(view) {
+            // Add current view to history
+            if (state.currentView !== view) {
+                navigationHistory.push(state.currentView);
+            }
+            
+            changeView(view);
+            updateBackButton();
+        }
+        
+        // Navigate back
+        function navigateBack() {
+            if (navigationHistory.length > 0) {
+                const prevView = navigationHistory.pop();
+                changeView(prevView);
+                updateBackButton();
+            }
+        }
+        
+        // Update back button visibility
+        function updateBackButton() {
+            const backBtn = document.getElementById('headerBackBtn');
+            if (state.currentView === 'main') {
+                backBtn.style.display = 'none';
+            } else {
+                backBtn.style.display = 'block';
+            }
         }
         
         // Initialize PeerJS connection
@@ -666,24 +744,30 @@
                     new Date(Date.now() + expirationHours * 60 * 60 * 1000),
                 participants: [state.userId],
                 messages: [],
-                personalName: name
+                personalName: name,
+                creator: state.userId,
+                isPrivate: type === 'private'
             };
             
             // Add to vaults
             state.vaults.push(vault);
             
             // Generate shareable URL
-            const url = `${window.location.origin}${window.location.pathname}#/vault/${vaultId}`;
+            let url = `${window.location.origin}${window.location.pathname}#/vault/${vaultId}/${state.userId}`;
+            if (type === 'private') {
+                url += '?private=true';
+            }
             
             // Save state
             saveState();
             
-            // Show notification with URL
-            showNotification(`Vault created! Share this URL: ${url}`);
+            // Show share view
+            document.getElementById('vaultUrlDisplay').textContent = url;
+            document.getElementById('vaultTypeInfo').textContent = 
+                `Type: ${type === 'private' ? 'Private Vault (Single-use)' : 'Public Vault (Multi-use)'}`;
             
-            // Render vaults
-            renderVaults();
-            changeView('main');
+            state.vaultType = type;
+            navigateTo('shareVault');
         }
         
         // Join a vault
@@ -697,16 +781,20 @@
             
             const vaultId = match[1];
             
+            // Check if it's a private vault from URL
+            const isPrivate = vaultUrl.includes('private=true');
+            
             // Create new vault object
             const vault = {
                 id: vaultId,
-                name: `Vault ${vaultId.substring(0, 8)}`,
-                type: 'private', // Assume private for demo
-                expiration: 168, // 7 days for demo
+                name: isPrivate ? personalName : `Public Vault ${vaultId.substring(0, 8)}`,
+                type: isPrivate ? 'private' : 'public',
+                expiration: 168, // Default to 7 days
                 expirationDate: new Date(Date.now() + 168 * 60 * 60 * 1000),
                 participants: [state.userId],
                 messages: [],
-                personalName: personalName
+                personalName: isPrivate ? personalName : '',
+                isPrivate: isPrivate
             };
             
             // Add to vaults
@@ -717,9 +805,9 @@
             
             // Render vaults
             renderVaults();
-            changeView('main');
+            navigateTo('main');
             
-            showNotification(`Joined vault: ${personalName}`);
+            showNotification(`Joined ${isPrivate ? 'private' : 'public'} vault: ${vault.name}`);
             
             // Attempt to connect to vault creator
             const creatorId = vaultUrl.split('/').pop();
@@ -784,7 +872,7 @@
                     '<span class="vault-type public-vault">Public</span>';
                 
                 vaultCard.innerHTML = `
-                    <h3>${vault.personalName} ${vaultType}</h3>
+                    <h3>${vault.name} ${vaultType}</h3>
                     <div class="vault-meta">
                         <div>${expirationText}</div>
                         <div>Participants: ${vault.participants.length}</div>
@@ -811,7 +899,7 @@
             
             state.currentVault = vault;
             
-            document.getElementById('vaultTitle').textContent = vault.personalName;
+            document.getElementById('vaultTitle').textContent = vault.name;
             document.getElementById('expirationInfo').textContent = 
                 `Expires: ${formatExpiration(vault.expiration)}`;
             document.getElementById('participantCount').textContent = 
@@ -823,7 +911,7 @@
             // Broadcast connection to all participants
             broadcastVaultInfo();
             
-            changeView('vault');
+            navigateTo('vault');
         }
         
         // Render messages
@@ -1096,7 +1184,14 @@
         
         // Copy vault URL to clipboard
         function copyVaultUrl(vaultId) {
-            const url = `${window.location.origin}${window.location.pathname}#/vault/${vaultId}/${state.userId}`;
+            const vault = state.vaults.find(v => v.id === vaultId);
+            if (!vault) return;
+            
+            let url = `${window.location.origin}${window.location.pathname}#/vault/${vaultId}/${state.userId}`;
+            if (vault.type === 'private') {
+                url += '?private=true';
+            }
+            
             navigator.clipboard.writeText(url).then(() => {
                 showNotification('Vault URL copied to clipboard!');
             });
@@ -1166,13 +1261,18 @@
                 if (parts.length >= 3) {
                     const vaultId = parts[2];
                     const creatorId = parts[3];
+                    const isPrivate = window.location.hash.includes('private=true');
                     
                     const vault = state.vaults.find(v => v.id === vaultId);
                     if (vault) {
                         openVault(vaultId);
                     } else {
-                        changeView('joinVault');
+                        navigateTo('joinVault');
                         document.getElementById('vaultUrl').value = window.location.href;
+                        
+                        // Show personal name field only for private vaults
+                        document.getElementById('privateNameGroup').style.display = 
+                            isPrivate ? 'block' : 'none';
                     }
                     
                     // Connect to the creator
@@ -1187,22 +1287,24 @@
         // Setup event listeners
         function setupEventListeners() {
             document.getElementById('createPrivateVault').addEventListener('click', () => {
-                document.getElementById('vaultType').value = 'private';
-                changeView('createVault');
+                document.getElementById('vaultNameLabel').textContent = 'Vault Name (Only you will see this)';
+                navigateTo('createVault');
+                state.vaultType = 'private';
             });
             
             document.getElementById('createPublicVault').addEventListener('click', () => {
-                document.getElementById('vaultType').value = 'public';
-                changeView('createVault');
+                document.getElementById('vaultNameLabel').textContent = 'Vault Name (Visible to all participants)';
+                navigateTo('createVault');
+                state.vaultType = 'public';
             });
             
             document.getElementById('joinVault').addEventListener('click', () => {
-                changeView('joinVault');
+                document.getElementById('privateNameGroup').style.display = 'none';
+                navigateTo('joinVault');
             });
             
             document.getElementById('createVaultBtn').addEventListener('click', () => {
                 const name = document.getElementById('vaultName').value.trim();
-                const type = document.getElementById('vaultType').value;
                 const expiration = document.getElementById('expiration').value;
                 
                 if (!name) {
@@ -1210,33 +1312,35 @@
                     return;
                 }
                 
-                createVault(type, name, expiration);
+                createVault(state.vaultType, name, expiration);
             });
             
-            document.getElementById('cancelCreate').addEventListener('click', () => {
-                changeView('main');
-            });
+            document.getElementById('cancelCreate').addEventListener('click', navigateBack);
             
             document.getElementById('joinVaultBtn').addEventListener('click', () => {
                 const url = document.getElementById('vaultUrl').value.trim();
                 const name = document.getElementById('personalVaultName').value.trim();
+                const isPrivate = url.includes('private=true');
                 
-                if (!url || !name) {
-                    showNotification('Please fill all fields');
+                if (!url) {
+                    showNotification('Please enter a vault URL');
+                    return;
+                }
+                
+                if (isPrivate && !name) {
+                    showNotification('Please enter a name for this private vault');
                     return;
                 }
                 
                 joinVault(url, name);
             });
             
-            document.getElementById('cancelJoin').addEventListener('click', () => {
-                changeView('main');
-            });
+            document.getElementById('cancelJoin').addEventListener('click', navigateBack);
             
             document.getElementById('sendMessageBtn').addEventListener('click', sendMessage);
             
             document.getElementById('leaveVault').addEventListener('click', () => {
-                changeView('main');
+                navigateTo('main');
             });
             
             document.getElementById('messageInput').addEventListener('keypress', (e) => {
@@ -1247,6 +1351,23 @@
             });
             
             document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+            
+            document.getElementById('copyVaultUrl').addEventListener('click', () => {
+                const url = document.getElementById('vaultUrlDisplay').textContent;
+                navigator.clipboard.writeText(url).then(() => {
+                    showNotification('URL copied to clipboard!');
+                });
+            });
+            
+            document.getElementById('goToVaultBtn').addEventListener('click', () => {
+                const vaultId = document.getElementById('vaultUrlDisplay').textContent
+                    .match(/vault\/([a-zA-Z0-9\-_]+)/)[1];
+                openVault(vaultId);
+            });
+            
+            document.getElementById('shareCancel').addEventListener('click', () => {
+                navigateTo('main');
+            });
         }
         
         // Start the app when DOM is loaded
