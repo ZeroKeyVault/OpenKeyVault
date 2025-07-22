@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Platform - Secure Vault Messaging</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        body {
+            background-color: #ffffff;
+            color: #333333;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .platform-container {
+            width: 100%;
+            max-width: 800px;
+            background: #f8f9fa;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 90vh;
+            border: 1px solid #e0e0e0;
+        }
+        
+        /* Header Styles */
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 20px 30px;
+            background: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-placeholder {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #4ecca3, #8a2be2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .app-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #222222;
+        }
+        
+        .privacy-status {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f0f2f5;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #4ecca3;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #4ecca3;
+        }
+        
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .welcome-screen {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .welcome-icon {
+            font-size: 64px;
+            color: #8a2be2;
+            margin-bottom: 30px;
+        }
+        
+        .welcome-title {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #222222;
+            font-weight: 700;
+        }
+        
+        .welcome-subtitle {
+            font-size: 18px;
+            color: #666666;
+            margin-bottom: 40px;
+            line-height: 1.7;
+        }
+        
+        .vault-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+        
+        .vault-option {
+            width: 200px;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 25px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+        
+        .vault-option:hover {
+            transform: translateY(-5px);
+            border-color: #8a2be2;
+            box-shadow: 0 6px 15px rgba(138, 43, 226, 0.1);
+        }
+        
+        .vault-option i {
+            font-size: 36px;
+            margin-bottom: 15px;
+            color: #8a2be2;
+        }
+        
+        .vault-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333333;
+        }
+        
+        .vault-desc {
+            font-size: 14px;
+            color: #666666;
+        }
+        
+        .duration-selection {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 40px 0;
+            display: none;
+        }
+        
+        .duration-title {
+            text-align: center;
+            font-size: 22px;
+            margin-bottom: 25px;
+            color: #333333;
+        }
+        
+        .duration-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        
+        .duration-option {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .duration-option:hover {
+            border-color: #8a2be2;
+            background: #f5f0ff;
+        }
+        
+        .duration-option.selected {
+            border-color: #8a2be2;
+            background: #f0e7ff;
+        }
+        
+        .vault-url {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .url-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333333;
+        }
+        
+        .url-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .url-input {
+            flex: 1;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .copy-btn {
+            background: #8a2be2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background: #7a1ad2;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .action-btn {
+            padding: 15px 30px;
+            background: #8a2be2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            background: #7a1ad2;
+            transform: translateY(-2px);
+        }
+        
+        .action-btn.secondary {
+            background: #f0f2f5;
+            color: #333333;
+        }
+        
+        .action-btn.secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .chat-container {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .chat-header {
+            padding: 20px;
+            background: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .vault-icon {
+            width: 40px;
+            height: 40px;
+            background: #f0e7ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8a2be2;
+        }
+        
+        .vault-info {
+            flex: 1;
+        }
+        
+        .vault-name-large {
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .vault-expiry {
+            font-size: 14px;
+            color: #666666;
+        }
+        
+        .messages-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #f0f2f5;
+        }
+        
+        .message {
+            max-width: 70%;
+            padding: 15px;
+            border-radius: 18px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        
+        .received {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .sent {
+            background: #8a2be2;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .message-time {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 5px;
+            text-align: right;
+        }
+        
+        .message-input-area {
+            padding: 20px;
+            background: #ffffff;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: none;
+            height: 60px;
+        }
+        
+        .send-btn {
+            background: #8a2be2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            width: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .send-btn:hover {
+            background: #7a1ad2;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4ecca3;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 100;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .vault-options {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .duration-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header {
+                padding: 15px;
+            }
+            
+            .app-name {
+                font-size: 20px;
+            }
+            
+            .privacy-status {
+                display: none;
+            }
+            
+            .welcome-title {
+                font-size: 26px;
+            }
+            
+            .duration-options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="platform-container">
+        <header class="header">
+            <div class="logo-container">
+                <div class="logo-placeholder">P</div>
+                <div class="app-name">The Platform</div>
+            </div>
+            
+            <div class="privacy-status">
+                <div class="status-indicator"></div>
+                <span>Secure Connection</span>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <!-- Welcome Screen -->
+            <div class="welcome-screen" id="welcomeScreen">
+                <div class="welcome-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h1 class="welcome-title">Secure Vault Messaging</h1>
+                <p class="welcome-subtitle">
+                    Create or join an encrypted vault to start communicating securely. 
+                    All messages are end-to-end encrypted and automatically deleted after the vault expires.
+                </p>
+                
+                <div class="vault-options">
+                    <div class="vault-option" data-type="private">
+                        <i class="fas fa-user-lock"></i>
+                        <div class="vault-name">Private Vault</div>
+                        <div class="vault-desc">End-to-end encrypted chat with one other person</div>
+                    </div>
+                    
+                    <div class="vault-option" data-type="public">
+                        <i class="fas fa-users"></i>
+                        <div class="vault-name">Public Vault</div>
+                        <div class="vault-desc">Encrypted group chat with multiple participants</div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn secondary" id="joinVaultBtn">
+                        <i class="fas fa-door-open"></i> Join Existing Vault
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Duration Selection -->
+            <div class="duration-selection" id="durationSelection">
+                <h2 class="duration-title">Select Vault Duration</h2>
+                <div class="duration-options">
+                    <div class="duration-option" data-duration="24">24 Hours</div>
+                    <div class="duration-option" data-duration="72">3 Days</div>
+                    <div class="duration-option" data-duration="168">7 Days</div>
+                    <div class="duration-option" data-duration="720">1 Month</div>
+                    <div class="duration-option" data-duration="4320">6 Months</div>
+                    <div class="duration-option" data-duration="0">Forever</div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn secondary" id="backToVaultType">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button class="action-btn" id="createVaultBtn">
+                        Create Vault
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Vault URL -->
+            <div class="vault-url" id="vaultUrl">
+                <h2 class="url-title">Share this URL to invite others to your vault</h2>
+                <div class="url-box">
+                    <input type="text" class="url-input" id="urlInput" value="https://platform.secure/vault/9a3f7d42" readonly>
+                    <button class="copy-btn" id="copyUrlBtn">Copy</button>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn" id="openVaultBtn">
+                        <i class="fas fa-lock-open"></i> Open Vault
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Interface -->
+            <div class="chat-container" id="chatContainer">
+                <div class="chat-header">
+                    <div class="vault-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div class="vault-info">
+                        <div class="vault-name-large">Private Vault</div>
+                        <div class="vault-expiry">Expires in 6 days, 23 hours</div>
+                    </div>
+                </div>
+                
+                <div class="messages-container" id="messagesContainer">
+                    <div class="message received">
+                        Welcome to your secure vault! All messages are end-to-end encrypted.
+                        <div class="message-time">System • Just now</div>
+                    </div>
+                </div>
+                
+                <div class="message-input-area">
+                    <textarea class="message-input" id="messageInput" placeholder="Type your secure message..."></textarea>
+                    <button class="send-btn" id="sendBtn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification">
+        URL copied to clipboard!
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            const durationSelection = document.getElementById('durationSelection');
+            const vaultUrl = document.getElementById('vaultUrl');
+            const chatContainer = document.getElementById('chatContainer');
+            const vaultOptions = document.querySelectorAll('.vault-option');
+            const durationOptions = document.querySelectorAll('.duration-option');
+            const urlInput = document.getElementById('urlInput');
+            
+            // State
+            let vaultType = '';
+            let vaultDuration = 168; // Default 7 days
+            
+            // Select vault type (private/public)
+            vaultOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    vaultType = this.dataset.type;
+                    welcomeScreen.style.display = 'none';
+                    durationSelection.style.display = 'block';
+                });
+            });
+            
+            // Join existing vault button
+            document.getElementById('joinVaultBtn').addEventListener('click', function() {
+                welcomeScreen.style.display = 'none';
+                vaultUrl.style.display = 'block';
+                urlInput.value = "https://platform.secure/vault/join";
+            });
+            
+            // Back to vault type selection
+            document.getElementById('backToVaultType').addEventListener('click', function() {
+                durationSelection.style.display = 'none';
+                welcomeScreen.style.display = 'block';
+            });
+            
+            // Select duration
+            durationOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    durationOptions.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    vaultDuration = this.dataset.duration;
+                });
+            });
+            
+            // Create vault
+            document.getElementById('createVaultBtn').addEventListener('click', function() {
+                durationSelection.style.display = 'none';
+                vaultUrl.style.display = 'block';
+                
+                // Generate random vault ID
+                const vaultId = Math.random().toString(36).substring(2, 10);
+                urlInput.value = `https://platform.secure/vault/${vaultId}`;
+            });
+            
+            // Copy URL to clipboard
+            document.getElementById('copyUrlBtn').addEventListener('click', function() {
+                urlInput.select();
+                document.execCommand('copy');
+                
+                // Show notification
+                const notification = document.getElementById('notification');
+                notification.style.display = 'block';
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 2000);
+            });
+            
+            // Open vault
+            document.getElementById('openVaultBtn').addEventListener('click', function() {
+                vaultUrl.style.display = 'none';
+                chatContainer.style.display = 'flex';
+                
+                // Add welcome message
+                addMessage("Welcome to your secure vault! All messages are end-to-end encrypted and will be automatically deleted after the vault expires.", false, "System");
+            });
+            
+            // Send message
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            document.getElementById('messageInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            function sendMessage() {
+                const messageInput = document.getElementById('messageInput');
+                const message = messageInput.value.trim();
+                
+                if (message) {
+                    addMessage(message, true, "You");
+                    messageInput.value = '';
+                    
+                    // Simulate response after delay
+                    setTimeout(() => {
+                        const responses = [
+                            "I received your encrypted message.",
+                            "This vault is securely encrypted.",
+                            "All messages are end-to-end encrypted.",
+                            "Our conversation will be automatically deleted when the vault expires."
+                        ];
+                        const response = responses[Math.floor(Math.random() * responses.length)];
+                        addMessage(response, false, "Participant");
+                    }, 1000);
+                }
+            }
+            
+            function addMessage(text, isSent = false, sender = "User") {
+                const messagesContainer = document.getElementById('messagesContainer');
+                const now = new Date();
+                const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                
+                const messageElement = document.createElement('div');
+                messageElement.className = `message ${isSent ? 'sent' : 'received'}`;
+                messageElement.innerHTML = `
+                    ${text}
+                    <div class="message-time">${sender} • ${timeString}</div>
+                `;
+                
+                messagesContainer.appendChild(messageElement);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+            
+            // Initialize with a duration selected
+            durationOptions[2].classList.add('selected');
+        });
+    </script>
+</body>
+</html>
