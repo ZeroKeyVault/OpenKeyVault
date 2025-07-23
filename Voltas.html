@@ -4,1637 +4,729 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Platform</title>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        /* All CSS styles remain unchanged */
+        /* Base styles */
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        :root {
-            --bg-white: #ffffff;
-            --bg-light: #f9f9f9;
-            --gray-100: #f5f5f5;
-            --gray-200: #eeeeee;
-            --gray-300: #e0e0e0;
-            --gray-400: #d0d0d0;
-            --gray-500: #b0b0b0;
-            --gray-600: #808080;
-            --gray-700: #555555;
-            --gray-800: #404040;
-            --gray-900: #333333;
-            --accent: #4a6fa5;
-            --success: #4CAF50;
-            --error: #f44336;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         
         body {
-            background-color: var(--bg-white);
-            color: var(--gray-900);
+            background-color: #ffffff;
+            color: #555555;
             line-height: 1.6;
-            max-width: 1200px;
+        }
+        
+        .container {
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
         
+        /* Header styles */
         header {
-            text-align: center;
             margin-bottom: 30px;
-            padding: 20px 0;
-            border-bottom: 1px solid var(--gray-300);
-            position: relative;
+            text-align: center;
         }
         
-        .back-btn {
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            color: var(--gray-700);
-            display: flex;
-            align-items: center;
-        }
-        
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            color: var(--gray-800);
-        }
-        
-        .app-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .view {
-            display: none;
-            padding: 20px;
-            border: 1px solid var(--gray-300);
-            border-radius: 8px;
-            background-color: var(--bg-light);
-            flex: 1;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-        }
-        
-        .view.active {
-            display: flex;
-            flex-direction: column;
-        }
-        
+        /* Button styles */
         .btn {
-            background-color: var(--gray-300);
-            color: var(--gray-900);
+            background: #555555;
+            color: white;
             border: none;
-            padding: 12px 18px;
+            padding: 12px 20px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            margin: 5px;
-            font-weight: 500;
+            font-size: 14px;
+            transition: background 0.2s;
+            display: inline-block;
+            text-align: center;
         }
         
         .btn:hover {
-            background-color: var(--gray-400);
-            transform: translateY(-1px);
+            background: #333333;
         }
         
-        .btn:active {
-            transform: translateY(1px);
+        .btn-nuke {
+            background: #888888;
         }
         
-        .btn-primary {
-            background-color: var(--gray-800);
-            color: var(--bg-white);
+        .btn-nuke:hover {
+            background: #666666;
         }
         
-        .btn-primary:hover {
-            background-color: var(--gray-900);
+        .btn-back {
+            background: #dddddd;
+            color: #555555;
         }
         
-        .btn-success {
-            background-color: var(--gray-700);
-            color: white;
+        .btn-back:hover {
+            background: #cccccc;
         }
         
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--gray-700);
-        }
-        
-        input, select, textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--gray-300);
-            border-radius: 6px;
-            font-size: 1rem;
-            background-color: var(--bg-white);
-            transition: border-color 0.3s;
-        }
-        
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--gray-500);
-            box-shadow: 0 0 0 2px rgba(128,128,128,0.1);
-        }
-        
-        .vault-card {
-            background-color: var(--bg-white);
-            border: 1px solid var(--gray-300);
-            border-radius: 8px;
-            padding: 18px;
-            margin-bottom: 18px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-        }
-        
-        .vault-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-            border-color: var(--gray-400);
-        }
-        
-        .vault-card h3 {
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            color: var(--gray-800);
-        }
-        
-        .vault-meta {
-            display: flex;
-            justify-content: space-between;
-            color: var(--gray-600);
-            font-size: 0.9rem;
-            margin-top: 8px;
-        }
-        
-        .message-container {
-            flex: 1;
+        /* Vault list styles */
+        .vault-list {
             display: flex;
             flex-direction: column;
-            min-height: 0;
+            gap: 15px;
+            margin-top: 20px;
         }
         
-        .message-list {
-            flex: 1;
-            overflow-y: auto;
-            margin-bottom: 20px;
-            border: 1px solid var(--gray-300);
+        .vault {
+            background: #f9f9f9;
             border-radius: 8px;
             padding: 15px;
-            background-color: var(--bg-white);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+            border-left: 3px solid #dddddd;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        
+        .vault:hover {
+            transform: translateY(-2px);
+        }
+        
+        .vault-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .vault-expiry {
+            font-size: 0.8em;
+            color: #888888;
+        }
+        
+        /* Message list styles */
+        .message-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #eeeeee;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            background: #fafafa;
         }
         
         .message {
-            padding: 14px;
-            border-radius: 10px;
-            background-color: var(--gray-100);
-            max-width: 85%;
-            position: relative;
-            animation: fadeIn 0.3s ease;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            background: #f0f0f0;
+            word-break: break-word;
         }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .message.self {
-            background-color: var(--gray-200);
+        .message-sent {
+            background: #e6f7ff;
             margin-left: auto;
         }
         
-        .message-header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.85rem;
-            margin-bottom: 8px;
-            color: var(--gray-600);
+        .message-time {
+            font-size: 0.7em;
+            color: #888888;
+            text-align: right;
+            margin-top: 3px;
         }
         
-        .file-upload {
-            margin: 15px 0;
-            padding: 15px;
-            border: 1px dashed var(--gray-300);
-            border-radius: 8px;
-            text-align: center;
-            background-color: var(--bg-white);
-            transition: border-color 0.3s;
-        }
-        
-        .file-upload:hover {
-            border-color: var(--gray-500);
-        }
-        
-        .file-preview {
-            display: flex;
-            align-items: center;
-            margin-top: 15px;
-            padding: 12px;
-            background-color: var(--gray-100);
-            border-radius: 8px;
-            border: 1px solid var(--gray-200);
-        }
-        
-        .file-preview img {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            margin-right: 15px;
-            border-radius: 6px;
-            border: 1px solid var(--gray-300);
-        }
-        
-        .file-info {
-            flex: 1;
-        }
-        
-        .file-info h4 {
-            margin-bottom: 5px;
-            color: var(--gray-800);
-        }
-        
-        .file-info p {
-            color: var(--gray-600);
-            font-size: 0.9rem;
-        }
-        
-        .download-btn {
-            background-color: var(--gray-800);
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: background-color 0.3s;
-        }
-        
-        .download-btn:hover {
-            background-color: var(--gray-900);
-        }
-        
-        .encryption-indicator {
-            display: flex;
-            align-items: center;
-            margin-top: 15px;
-            color: var(--gray-700);
-            font-size: 0.9rem;
-            background-color: var(--gray-100);
-            padding: 10px 15px;
-            border-radius: 6px;
-            border: 1px solid var(--gray-200);
-        }
-        
-        .encryption-indicator::before {
-            content: "✓";
-            margin-right: 8px;
-            font-weight: bold;
-            color: var(--success);
-        }
-        
-        footer {
-            text-align: center;
-            margin-top: 40px;
-            padding: 20px 0;
-            border-top: 1px solid var(--gray-300);
-            color: var(--gray-600);
-            font-size: 0.9rem;
-        }
-        
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            background-color: var(--gray-800);
-            color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            display: none;
-            z-index: 1000;
-            max-width: 400px;
-            animation: slideIn 0.3s ease;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        .vault-type {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 14px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-        
-        .private-vault {
-            background-color: var(--gray-200);
-            color: var(--gray-700);
-        }
-        
-        .public-vault {
-            background-color: var(--gray-300);
-            color: var(--gray-800);
-        }
-        
-        .connection-status {
-            display: flex;
-            align-items: center;
-            margin-top: 15px;
-            font-size: 0.9rem;
-            background-color: var(--gray-100);
-            padding: 10px 15px;
-            border-radius: 6px;
-            border: 1px solid var(--gray-200);
-        }
-        
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-        
-        .status-connected {
-            background-color: var(--success);
-        }
-        
-        .status-disconnected {
-            background-color: var(--error);
-        }
-        
-        .status-connecting {
-            background-color: #ff9800;
-        }
-        
-        .progress-container {
-            margin-top: 15px;
-            height: 6px;
-            background-color: var(--gray-200);
-            border-radius: 3px;
-            overflow: hidden;
-        }
-        
-        .progress-bar {
-            height: 100%;
-            background-color: var(--gray-700);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            margin-top: 15px;
-        }
-        
-        .vault-id-display {
-            font-size: 0.85rem;
-            color: var(--gray-600);
-            word-break: break-all;
-            margin-top: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: var(--gray-100);
-            padding: 8px 12px;
-            border-radius: 6px;
-        }
-        
-        .copy-btn {
-            background: var(--gray-300);
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: background-color 0.3s;
-        }
-        
-        .copy-btn:hover {
-            background-color: var(--gray-400);
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--gray-600);
-        }
-        
-        .empty-state i {
-            font-size: 3.5rem;
-            margin-bottom: 20px;
-            opacity: 0.2;
-            color: var(--gray-600);
-        }
-        
-        .empty-state h3 {
-            margin-bottom: 10px;
-            color: var(--gray-700);
-        }
-        
-        .url-display {
-            background-color: var(--gray-100);
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-            word-break: break-all;
-            font-size: 0.95rem;
-            border: 1px solid var(--gray-200);
-        }
-        
-        .message-input-container {
-            display: flex;
-            gap: 12px;
-            margin-top: 15px;
-        }
-        
+        /* Input area styles */
         .message-input {
-            flex: 1;
-            padding: 14px;
-            border: 1px solid var(--gray-300);
-            border-radius: 8px;
-            font-size: 1rem;
-            background-color: var(--bg-white);
-            resize: none;
-            min-height: 60px;
-            transition: border-color 0.3s;
-        }
-        
-        .message-input:focus {
-            outline: none;
-            border-color: var(--gray-500);
-            box-shadow: 0 0 0 2px rgba(128,128,128,0.1);
-        }
-        
-        .send-btn {
-            background-color: var(--gray-800);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 0 25px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background-color 0.3s;
             display: flex;
-            align-items: center;
+            margin-top: 15px;
+            gap: 10px;
+        }
+        
+        .message-input input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #dddddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
             justify-content: center;
+            align-items: center;
+            z-index: 1000;
         }
         
-        .send-btn:hover {
-            background-color: var(--gray-900);
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal h2 {
+            margin: 0;
+            color: #555555;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #555555;
+        }
+        
+        .modal input,
+        .modal select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #dddddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        /* Footer styles */
+        footer {
+            margin-top: 40px;
+            font-size: 0.8em;
+            color: #888888;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #eeeeee;
+        }
+        
+        /* Navigation controls */
+        .nav-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        /* Responsive design */
         @media (max-width: 768px) {
-            body {
-                padding: 15px;
-            }
-            
-            .message {
-                max-width: 90%;
-            }
-            
-            .action-buttons {
+            .nav-controls {
                 flex-direction: column;
             }
             
-            .message-input-container {
+            .message-input {
                 flex-direction: column;
-            }
-            
-            .send-btn {
-                height: 50px;
             }
         }
     </style>
 </head>
 <body>
-    <header>
-        <button id="headerBackBtn" class="back-btn" style="display: none;">← Back</button>
-        <h1>The Platform</h1>
-        <p>Secure Peer-to-Peer Communication</p>
-    </header>
-    
-    <div class="app-container">
-        <!-- Main View -->
-        <div id="mainView" class="view active">
-            <h2>Your Vaults</h2>
-            <div id="vaultList" class="vault-list">
-                <div class="empty-state">
-                    <i>🔒</i>
-                    <h3>No vaults yet</h3>
-                    <p>Create or join a vault to start secure communication</p>
+    <div class="container">
+        <header>
+            <h1>The Platform</h1>
+        </header>
+        
+        <div id="app">
+            <div id="home">
+                <div class="nav-controls">
+                    <button class="btn" onclick="showCreateVault()">Create Vault</button>
+                    <button class="btn" onclick="showJoinVault()">Join Vault</button>
+                    <button class="btn btn-nuke" onclick="nuke()">NUKE</button>
+                </div>
+                
+                <h2>Your Vaults</h2>
+                <div id="vault-list" class="vault-list">
+                    <!-- Vaults will be displayed here -->
                 </div>
             </div>
-            <div class="actions">
-                <button id="createPrivateVault" class="btn btn-primary">Create Private Vault</button>
-                <button id="createPublicVault" class="btn">Create Public Vault</button>
-                <button id="joinVault" class="btn">Join Vault</button>
+            
+            <div id="vault-view" style="display: none;">
+                <button class="btn btn-back" onclick="backToHome()">← Back</button>
+                <h2 id="current-vault-name"></h2>
+                <div id="current-vault-expiry" class="vault-expiry"></div>
+                
+                <div class="message-list" id="message-container">
+                    <!-- Messages will be displayed here -->
+                </div>
+                
+                <div class="message-input">
+                    <input type="text" id="message-input" placeholder="Type your message...">
+                    <button class="btn" onclick="sendMessage()">Send</button>
+                </div>
             </div>
         </div>
         
-        <!-- Create Vault View -->
-        <div id="createVaultView" class="view">
-            <h2>Create New Vault</h2>
-            <div class="form-group">
-                <label id="vaultNameLabel" for="vaultName">Vault Name (Only you will see this)</label>
-                <input type="text" id="vaultName" placeholder="My Secret Conversations">
-            </div>
-            <div class="form-group">
-                <label for="expiration">Expiration Time</label>
-                <select id="expiration">
-                    <option value="5">5 hours</option>
-                    <option value="24">24 hours</option>
-                    <option value="72">3 days</option>
-                    <option value="168">7 days</option>
-                    <option value="720">1 month (30 days)</option>
-                    <option value="4320">6 months</option>
-                    <option value="8760">1 year</option>
-                    <option value="0">Forever</option>
+        <!-- Create Vault Modal -->
+        <div id="create-vault-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Create New Vault</h2>
+                    <button class="modal-close" onclick="closeModal('create-vault-modal')">&times;</button>
+                </div>
+                <input type="text" id="vault-name" placeholder="Vault Name" required>
+                <select id="vault-type">
+                    <option value="private">Private Vault</option>
+                    <option value="public">Public Vault</option>
                 </select>
-            </div>
-            <div class="action-buttons">
-                <button id="createVaultBtn" class="btn btn-primary">Create Vault</button>
-                <button id="cancelCreate" class="btn">Cancel</button>
-            </div>
-        </div>
-        
-        <!-- Share Vault View -->
-        <div id="shareVaultView" class="view">
-            <h2>Your Vault is Ready!</h2>
-            <div class="form-group">
-                <label>Share this URL:</label>
-                <div class="url-display" id="vaultUrlDisplay">Generating URL...</div>
-            </div>
-            <p id="vaultTypeInfo" class="vault-meta"></p>
-            <div class="action-buttons">
-                <button id="copyVaultUrl" class="btn btn-primary">Copy URL</button>
-                <button id="goToVaultBtn" class="btn">Go to Vault</button>
-                <button id="shareCancel" class="btn">Back to Main</button>
+                <select id="vault-expiry">
+                    <option value="3600">1 Hour</option>
+                    <option value="18000">5 Hours</option>
+                    <option value="86400">1 Day</option>
+                    <option value="2592000">30 Days</option>
+                    <option value="7776000">90 Days</option>
+                    <option value="15768000">180 Days</option>
+                    <option value="31536000">1 Year</option>
+                </select>
+                <button class="btn" onclick="createVault()">Create</button>
             </div>
         </div>
-        
-        <!-- Join Vault View -->
-        <div id="joinVaultView" class="view">
-            <h2>Join a Vault</h2>
-            <div class="form-group">
-                <label for="vaultUrl">Vault URL</label>
-                <input type="text" id="vaultUrl" placeholder="https://theplatform.com/vault/abc123...">
-            </div>
-            <div class="form-group" id="privateNameGroup">
-                <label for="personalVaultName">Your Name for this Vault</label>
-                <input type="text" id="personalVaultName" placeholder="My Chat with Alex">
-            </div>
-            <div class="action-buttons">
-                <button id="joinVaultBtn" class="btn btn-primary">Join Vault</button>
-                <button id="cancelJoin" class="btn">Cancel</button>
-            </div>
-        </div>
-        
-        <!-- Vault View -->
-        <div id="vaultView" class="view">
-            <h2 id="vaultTitle">Vault Name</h2>
-            <div class="vault-meta">
-                <div id="expirationInfo">Expires: Never</div>
-                <div id="participants">Participants: <span id="participantCount">1</span></div>
-            </div>
-            
-            <div class="message-container">
-                <div class="message-list" id="messageList">
-                    <!-- Messages will appear here -->
+
+        <!-- Join Vault Modal -->
+        <div id="join-vault-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Join Existing Vault</h2>
+                    <button class="modal-close" onclick="closeModal('join-vault-modal')">&times;</button>
                 </div>
-                
-                <div class="file-upload">
-                    <label for="fileInput">Send file, photo, or audio:</label>
-                    <input type="file" id="fileInput" multiple>
-                    <div id="filePreview"></div>
-                    <div class="progress-container" id="progressContainer" style="display: none;">
-                        <div class="progress-bar" id="progressBar"></div>
-                    </div>
-                </div>
-                
-                <div class="message-input-container">
-                    <textarea id="messageInput" class="message-input" placeholder="Type your secure message here..."></textarea>
-                    <button id="sendMessageBtn" class="send-btn">Send</button>
-                </div>
-            </div>
-            
-            <div class="action-buttons">
-                <button id="leaveVault" class="btn">Leave Vault</button>
-            </div>
-            
-            <div class="encryption-indicator">All messages are end-to-end encrypted</div>
-            <div class="connection-status">
-                <span class="status-dot" id="statusDot"></span>
-                <span id="statusText">Connecting to peer network...</span>
+                <input type="text" id="join-vault-hash" placeholder="Vault Hash" required>
+                <select id="join-vault-type">
+                    <option value="private">Private Vault</option>
+                    <option value="public">Public Vault</option>
+                </select>
+                <button class="btn" onclick="joinVault()">Join</button>
             </div>
         </div>
+
+        <footer>
+            a Prakhar Solanki creation
+        </footer>
     </div>
-    
-    <div class="notification" id="notification">Vault created successfully!</div>
-    
-    <footer>
-        a Prakhar Solanki creation
-    </footer>
-    
+
     <script>
-        // Application state
-        const state = {
-            currentView: 'main',
-            userId: null,
-            vaults: [],
-            currentVault: null,
-            peer: null,
-            connections: {},
-            currentFile: null,
-            vaultType: null,
-            fileStorage: {}
-        };
-        
-        // PeerJS configuration
-        const PEER_CONFIG = {
-            host: '0.peerjs.com',
-            port: 443,
-            secure: true,
-            debug: 2
-        };
-        
+        // Constants and application state
+        const API_URL = '/api';
+        let currentUser;
+        let currentVault;
+        let vaults = [];
+        let cryptoKeys;
+        let socket;
+
         // Initialize the application
-        async function initApp() {
-            // Load state from localStorage
-            loadState();
-            
-            // Initialize PeerJS
-            initPeerConnection();
-            
-            // Render initial view
-            renderVaults();
-            
-            // Setup event listeners
-            setupEventListeners();
-            
-            // Check for URL hash to auto-join a vault
-            handleInitialVaultJoin();
-            
-            // Set up back button
-            document.getElementById('headerBackBtn').addEventListener('click', navigateBack);
-        }
-        
-        // Navigation history
-        const navigationHistory = [];
-        
-        // Navigate to a view
-        function navigateTo(view) {
-            // Add current view to history
-            if (state.currentView !== view) {
-                navigationHistory.push(state.currentView);
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Generate unique user ID
+            if (!localStorage.getItem('userId')) {
+                localStorage.setItem('userId', crypto.getRandomValues(new Uint8Array(16)).toString());
             }
+            currentUser = localStorage.getItem('userId');
             
-            changeView(view);
-            updateBackButton();
+            // Generate cryptographic keys
+            cryptoKeys = await generateKeyPair();
+            
+            // Load existing vaults
+            loadVaults();
+            
+            // Initialize WebSocket connection
+            initWebSocket();
+        });
+
+        // Cryptographic operations
+        async function generateKeyPair() {
+            return await crypto.subtle.generateKey(
+                { name: 'ECDH', namedCurve: 'P-256' },
+                true,
+                ['deriveKey', 'deriveBits']
+            );
         }
-        
-        // Navigate back
-        function navigateBack() {
-            if (navigationHistory.length > 0) {
-                const prevView = navigationHistory.pop();
-                changeView(prevView);
-                updateBackButton();
-            }
-        }
-        
-        // Update back button visibility
-        function updateBackButton() {
-            const backBtn = document.getElementById('headerBackBtn');
-            if (state.currentView === 'main') {
-                backBtn.style.display = 'none';
-            } else {
-                backBtn.style.display = 'block';
-            }
-        }
-        
-        // Initialize PeerJS connection
-        function initPeerConnection() {
-            if (!state.userId) {
-                state.userId = 'user-' + Math.random().toString(36).substr(2, 8);
-                saveState();
-            }
-            
-            state.peer = new Peer(state.userId, PEER_CONFIG);
-            
-            // Peer connection handlers
-            state.peer.on('open', id => {
-                console.log('Peer connected with ID:', id);
-                updateConnectionStatus('connected', 'Connected to peer network');
-                
-                // Reconnect to existing vault when reopening
-                if (state.currentVault) {
-                    reconnectToVault();
-                }
-            });
-            
-            state.peer.on('connection', conn => {
-                console.log('Incoming connection from:', conn.peer);
-                setupConnection(conn);
-            });
-            
-            state.peer.on('error', err => {
-                console.error('PeerJS error:', err);
-                if (err.type === 'unavailable-id') {
-                    // Generate a new ID if current one is taken
-                    state.userId = 'user-' + Math.random().toString(36).substr(2, 8);
-                    saveState();
-                    initPeerConnection();
-                }
-                updateConnectionStatus('disconnected', 'Connection error: ' + err.message);
-            });
-            
-            state.peer.on('disconnected', () => {
-                console.log('Peer disconnected');
-                updateConnectionStatus('disconnected', 'Disconnected from peer network');
-                // Attempt to reconnect
-                setTimeout(() => {
-                    state.peer.reconnect();
-                    updateConnectionStatus('connecting', 'Reconnecting...');
-                }, 2000);
-            });
-        }
-        
-        // Reconnect to vault when reopening the app
-        function reconnectToVault() {
-            if (!state.currentVault) return;
-            
-            // Reconnect to all known participants
-            Object.values(state.connections).forEach(conn => {
-                if (!conn.open) {
-                    const newConn = state.peer.connect(conn.peer);
-                    setupConnection(newConn);
-                }
-            });
-            
-            // Broadcast vault info to reestablish connections
-            broadcastVaultInfo();
-        }
-        
-        // Set up a connection with another peer
-        function setupConnection(conn) {
-            conn.on('open', () => {
-                console.log('Connection established with:', conn.peer);
-                state.connections[conn.peer] = conn;
-                
-                // Handle incoming messages
-                conn.on('data', data => {
-                    handleIncomingData(data);
-                });
-                
-                // Handle disconnection
-                conn.on('close', () => {
-                    console.log('Connection closed with:', conn.peer);
-                    delete state.connections[conn.peer];
-                    updateParticipantCount();
-                });
-                
-                // If we're in a vault, send vault info to the new participant
-                if (state.currentVault) {
-                    conn.send({
-                        type: 'vault-info',
-                        vaultId: state.currentVault.id,
-                        name: state.currentVault.personalName
-                    });
-                }
-                
-                updateParticipantCount();
-            });
-            
-            conn.on('error', err => {
-                console.error('Connection error:', err);
-            });
-        }
-        
-        // Handle incoming data
-        function handleIncomingData(data) {
-            if (!data || !state.currentVault) return;
-            
-            switch(data.type) {
-                case 'message':
-                    // Simulate encryption - in a real app, this would be decrypted
-                    const decryptedText = decryptMessage(data.text);
-                    addMessageToVault({
-                        id: 'msg-' + Date.now(),
-                        sender: data.sender,
-                        text: decryptedText,
-                        timestamp: new Date(),
-                        isFile: false
-                    });
-                    break;
-                    
-                case 'file-start':
-                    state.currentFile = {
-                        id: data.fileId,
-                        name: data.name,
-                        type: data.fileType,
-                        size: data.size,
-                        chunks: [],
-                        received: 0
-                    };
-                    showNotification(`Receiving file: ${data.name}`);
-                    break;
-                    
-                case 'file-chunk':
-                    if (state.currentFile && state.currentFile.id === data.fileId) {
-                        state.currentFile.chunks.push(data.chunk);
-                        state.currentFile.received += data.chunk.byteLength;
-                        
-                        // Update progress
-                        const percent = Math.floor((state.currentFile.received / state.currentFile.size) * 100);
-                        document.getElementById('progressBar').style.width = `${percent}%`;
-                        
-                        if (state.currentFile.received >= state.currentFile.size) {
-                            // File transfer complete
-                            const file = new Blob(state.currentFile.chunks, {type: state.currentFile.type});
-                            
-                            // Store file for download
-                            state.fileStorage[data.fileId] = file;
-                            
-                            addMessageToVault({
-                                id: 'file-' + Date.now(),
-                                sender: data.sender,
-                                fileName: state.currentFile.name,
-                                fileType: state.currentFile.type,
-                                fileSize: state.currentFile.size,
-                                fileId: data.fileId,
-                                timestamp: new Date(),
-                                isFile: true
-                            });
-                            
-                            state.currentFile = null;
-                            document.getElementById('progressContainer').style.display = 'none';
-                            showNotification(`File received: ${state.currentFile.name}`);
-                        }
-                    }
-                    break;
-                    
-                case 'vault-info':
-                    if (state.currentVault && state.currentVault.id === data.vaultId) {
-                        // Update participant count
-                        updateParticipantCount();
-                    }
-                    break;
-            }
-        }
-        
-        // Simulate message encryption
-        function encryptMessage(text) {
-            // In a real app, this would use WebCrypto API
-            return btoa(unescape(encodeURIComponent(text)));
-        }
-        
-        // Simulate message decryption
-        function decryptMessage(text) {
-            // In a real app, this would use WebCrypto API
-            return decodeURIComponent(escape(atob(text)));
-        }
-        
-        // Create a vault
-        function createVault(type, name, expiration) {
-            const vaultId = 'vault-' + Math.random().toString(36).substr(2, 10);
-            const expirationHours = parseInt(expiration);
-            
-            const vault = {
-                id: vaultId,
-                name: name,
-                type: type,
-                expiration: expirationHours,
-                expirationDate: expirationHours === 0 ? null : 
-                    new Date(Date.now() + expirationHours * 60 * 60 * 1000),
-                participants: [state.userId],
-                messages: [],
-                personalName: name,
-                creator: state.userId,
-                isPrivate: type === 'private'
-            };
-            
-            // Add to vaults
-            state.vaults.push(vault);
-            
-            // Generate shareable URL
-            let url = `${window.location.origin}${window.location.pathname}#/vault/${vaultId}/${state.userId}`;
-            if (type === 'private') {
-                url += '?private=true';
-            }
-            
-            // Save state
-            saveState();
-            
-            // Show share view
-            document.getElementById('vaultUrlDisplay').textContent = url;
-            document.getElementById('vaultTypeInfo').textContent = 
-                `Type: ${type === 'private' ? 'Private Vault (Single-use)' : 'Public Vault (Multi-use)'}`;
-            
-            state.vaultType = type;
-            navigateTo('shareVault');
-        }
-        
-        // Join a vault
-        function joinVault(vaultUrl, personalName) {
-            // Extract vault ID from URL
-            const match = vaultUrl.match(/vault\/([a-zA-Z0-9\-_]+)/);
-            if (!match || match.length < 2) {
-                showNotification('Invalid vault URL');
-                return;
-            }
-            
-            const vaultId = match[1];
-            
-            // Check if it's a private vault from URL
-            const isPrivate = vaultUrl.includes('private=true');
-            
-            // Create new vault object
-            const vault = {
-                id: vaultId,
-                name: isPrivate ? personalName : `Public Vault ${vaultId.substring(0, 8)}`,
-                type: isPrivate ? 'private' : 'public',
-                expiration: 168, // Default to 7 days
-                expirationDate: new Date(Date.now() + 168 * 60 * 60 * 1000),
-                participants: [state.userId],
-                messages: [],
-                personalName: isPrivate ? personalName : '',
-                isPrivate: isPrivate,
-                creator: extractCreatorId(vaultUrl) // Store creator ID for reconnection
-            };
-            
-            // Add to vaults
-            state.vaults.push(vault);
-            
-            // Save state
-            saveState();
-            
-            // Render vaults
-            renderVaults();
-            
-            // Automatically open the vault after joining
-            openVault(vaultId);
-            
-            showNotification(`Joined ${isPrivate ? 'private' : 'public'} vault: ${vault.name}`);
-            
-            // Attempt to connect to vault creator
-            if (vault.creator && vault.creator !== state.userId) {
-                console.log('Connecting to creator:', vault.creator);
-                const conn = state.peer.connect(vault.creator);
-                setupConnection(conn);
-            }
-        }
-        
-        // Extract creator ID from URL
-        function extractCreatorId(url) {
+
+        async function encryptMessage(content, recipientPubKey) {
             try {
-                const urlObj = new URL(url);
-                const hashParts = urlObj.hash.split('/');
-                if (hashParts.length >= 4) {
-                    const creatorId = hashParts[3];
-                    return creatorId.includes('?') ? creatorId.split('?')[0] : creatorId;
-                }
-            } catch (e) {
-                console.error('Error parsing URL:', e);
-            }
-            
-            // Fallback to regex extraction
-            const match = url.match(/vault\/[^/]+\/([^/?]+)/);
-            return match && match[1] ? match[1] : null;
-        }
-        
-        // Save state to localStorage
-        function saveState() {
-            localStorage.setItem('appState', JSON.stringify({
-                userId: state.userId,
-                vaults: state.vaults
-            }));
-        }
-        
-        // Load state from localStorage
-        function loadState() {
-            const savedState = localStorage.getItem('appState');
-            if (savedState) {
-                const parsed = JSON.parse(savedState);
-                state.userId = parsed.userId;
-                state.vaults = parsed.vaults || [];
+                // Generate ephemeral key pair
+                const ephemeralKey = await crypto.subtle.generateKey(
+                    { name: 'ECDH', namedCurve: 'P-256' },
+                    true,
+                    ['deriveKey', 'deriveBits']
+                );
                 
-                // Convert expiration dates back to Date objects
-                state.vaults.forEach(vault => {
-                    if (vault.expirationDate) {
-                        vault.expirationDate = new Date(vault.expirationDate);
-                    }
-                });
-            }
-        }
-        
-        // Render vaults list
-        function renderVaults() {
-            const vaultList = document.getElementById('vaultList');
-            vaultList.innerHTML = '';
-            
-            if (state.vaults.length === 0) {
-                vaultList.innerHTML = `
-                    <div class="empty-state">
-                        <i>🔒</i>
-                        <h3>No vaults yet</h3>
-                        <p>Create or join a vault to start secure communication</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            state.vaults.forEach(vault => {
-                const vaultCard = document.createElement('div');
-                vaultCard.className = 'vault-card';
-                vaultCard.dataset.id = vault.id;
+                // Derive shared secret
+                const sharedSecret = await crypto.subtle.deriveBits(
+                    { name: 'ECDH', public: recipientPubKey },
+                    cryptoKeys.privateKey,
+                    256
+                );
                 
-                const expirationText = vault.expiration === 0 ? 
-                    'Never expires' : 
-                    `Expires: ${formatExpiration(vault.expiration)}`;
+                // Generate encryption key and IV
+                const encryptionKey = await crypto.subtle.importKey(
+                    'raw',
+                    new TextEncoder().encode(crypto.createHash('sha256').update(sharedSecret).digest()),
+                    { name: 'AES-GCM', length: 256 },
+                    false,
+                    ['encrypt']
+                );
+                const iv = crypto.getRandomValues(new Uint8Array(12));
                 
-                const vaultType = vault.type === 'private' ? 
-                    '<span class="vault-type private-vault">Private</span>' : 
-                    '<span class="vault-type public-vault">Public</span>';
-                
-                vaultCard.innerHTML = `
-                    <h3>${vault.name} ${vaultType}</h3>
-                    <div class="vault-meta">
-                        <div>${expirationText}</div>
-                        <div>Participants: ${vault.participants.length}</div>
-                    </div>
-                    <div class="vault-id-display">ID: ${vault.id} 
-                        <button class="copy-btn" data-id="${vault.id}">Copy URL</button>
-                    </div>
-                `;
-                
-                vaultCard.addEventListener('click', () => openVault(vault.id));
-                vaultCard.querySelector('.copy-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    copyVaultUrl(vault.id);
-                });
-                
-                vaultList.appendChild(vaultCard);
-            });
-        }
-        
-        // Open a vault
-        function openVault(vaultId) {
-            const vault = state.vaults.find(v => v.id === vaultId);
-            if (!vault) return;
-            
-            state.currentVault = vault;
-            
-            document.getElementById('vaultTitle').textContent = vault.name;
-            document.getElementById('expirationInfo').textContent = 
-                `Expires: ${formatExpiration(vault.expiration)}`;
-            document.getElementById('participantCount').textContent = 
-                vault.participants.length;
-            
-            // Render messages
-            renderMessages(vault.messages);
-            
-            // If PeerJS is ready, reconnect to participants
-            if (state.peer && state.peer.open) {
-                reconnectToVault();
-            } else {
-                // If PeerJS isn't ready yet, wait for it to open
-                state.peer.on('open', () => {
-                    reconnectToVault();
-                });
-            }
-            
-            navigateTo('vault');
-        }
-        
-        // Render messages
-        function renderMessages(messages) {
-            const messageList = document.getElementById('messageList');
-            messageList.innerHTML = '';
-            
-            if (messages.length === 0) {
-                messageList.innerHTML = `
-                    <div class="empty-state">
-                        <i>💬</i>
-                        <h3>No messages yet</h3>
-                        <p>Send a message to start the conversation</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            messages.forEach(msg => {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${msg.sender === state.userId ? 'self' : ''}`;
-                
-                let content = '';
-                if (msg.isFile) {
-                    content = `
-                        <div class="file-message">
-                            <div class="file-preview">
-                                <div class="file-info">
-                                    <h4>📎 ${msg.fileName}</h4>
-                                    <p>${formatFileSize(msg.fileSize)} · ${msg.fileType}</p>
-                                </div>
-                                <button class="download-btn" data-fileid="${msg.fileId}">Download</button>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    content = `<div class="message-content">${msg.text}</div>`;
-                }
-                
-                messageDiv.innerHTML = `
-                    <div class="message-header">
-                        <span>${msg.sender === state.userId ? 'You' : 'Participant'}</span>
-                        <span>${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                    </div>
-                    ${content}
-                `;
-                
-                messageList.appendChild(messageDiv);
-            });
-            
-            // Add download event listeners
-            document.querySelectorAll('.download-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const fileId = e.target.dataset.fileid;
-                    downloadFile(fileId);
-                });
-            });
-            
-            // Scroll to bottom
-            messageList.scrollTop = messageList.scrollHeight;
-        }
-        
-        // Download a file
-        function downloadFile(fileId) {
-            const file = state.fileStorage[fileId];
-            if (file) {
-                const url = URL.createObjectURL(file);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `file_${Date.now()}`;
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => {
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                }, 0);
-            } else {
-                showNotification('File no longer available for download');
-            }
-        }
-        
-        // Format expiration text
-        function formatExpiration(expiration) {
-            if (expiration === 0) return 'Never';
-            
-            const now = new Date();
-            const expiryDate = new Date(now.getTime() + expiration * 60 * 60 * 1000);
-            return expiryDate.toLocaleDateString();
-        }
-        
-        // Format file size
-        function formatFileSize(bytes) {
-            if (bytes < 1024) return bytes + ' bytes';
-            else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-            else return (bytes / 1048576).toFixed(1) + ' MB';
-        }
-        
-        // Send a message
-        function sendMessage() {
-            const messageInput = document.getElementById('messageInput');
-            const text = messageInput.value.trim();
-            const fileInput = document.getElementById('fileInput');
-            
-            if (!text && fileInput.files.length === 0) return;
-            
-            if (fileInput.files.length > 0) {
-                // Handle file upload
-                sendFile(fileInput.files[0]);
-                fileInput.value = '';
-                document.getElementById('filePreview').innerHTML = '';
-            } else {
                 // Encrypt the message
-                const encryptedText = encryptMessage(text);
+                const encoder = new TextEncoder();
+                const encrypted = await crypto.subtle.encrypt(
+                    { name: 'AES-GCM', iv },
+                    encryptionKey,
+                    encoder.encode(content)
+                );
                 
-                // Send text message
-                const message = {
-                    id: 'msg-' + Date.now(),
-                    sender: state.userId,
-                    text: text,
-                    timestamp: new Date(),
-                    isFile: false
+                return {
+                    ciphertext: encrypted,
+                    iv,
+                    ephemeralPubKey: await crypto.subtle.exportKey('raw', ephemeralKey.publicKey)
                 };
-                
-                // Add to current vault
-                state.currentVault.messages.push(message);
-                
-                // Broadcast to all connections
-                broadcastMessage({
-                    type: 'message',
-                    sender: state.userId,
-                    text: encryptedText
-                });
-                
-                // Save state
-                saveState();
-                
-                // Render messages
-                renderMessages(state.currentVault.messages);
-                
-                // Clear input
-                messageInput.value = '';
-                messageInput.focus();
+            } catch (error) {
+                console.error('Encryption error:', error);
+                return null;
             }
         }
-        
-        // Send a file
-        async function sendFile(file) {
-            if (!file) return;
-            
-            const fileId = 'file-' + Date.now();
-            const CHUNK_SIZE = 16384; // 16KB chunks
-            
-            // Show file preview
-            const filePreview = document.getElementById('filePreview');
-            filePreview.innerHTML = '';
-            
-            const preview = document.createElement('div');
-            preview.className = 'file-preview';
-            
-            if (file.type.startsWith('image/')) {
-                const img = document.createElement('img');
-                img.src = URL.createObjectURL(file);
-                preview.appendChild(img);
+
+        async function decryptMessage(encryptedData, senderPubKey) {
+            try {
+                // Derive shared secret
+                const sharedSecret = await crypto.subtle.deriveBits(
+                    { name: 'ECDH', public: await crypto.subtle.importKey('raw', senderPubKey, { name: 'ECDH', namedCurve: 'P-256' }, false, []) },
+                    cryptoKeys.privateKey,
+                    256
+                );
+                
+                // Generate encryption key
+                const encryptionKey = await crypto.subtle.importKey(
+                    'raw',
+                    new TextEncoder().encode(crypto.createHash('sha256').update(sharedSecret).digest()),
+                    { name: 'AES-GCM', length: 256 },
+                    false,
+                    ['decrypt']
+                );
+                
+                // Decrypt the message
+                const decrypted = await crypto.subtle.decrypt(
+                    { name: 'AES-GCM', iv: encryptedData.iv },
+                    encryptionKey,
+                    encryptedData.ciphertext
+                );
+                
+                return new TextDecoder().decode(decrypted);
+            } catch (error) {
+                console.error('Decryption error:', error);
+                return null;
             }
+        }
+
+        // Vault management
+        async function createVault() {
+            const name = document.getElementById('vault-name').value;
+            const type = document.getElementById('vault-type').value;
+            const expiry = parseInt(document.getElementById('vault-expiry').value);
             
-            const fileInfo = document.createElement('div');
-            fileInfo.className = 'file-info';
-            fileInfo.innerHTML = `
-                <h4>${file.name}</h4>
-                <p>${file.type} - ${formatFileSize(file.size)}</p>
-            `;
+            if (!name) return showError('Please enter a vault name');
             
-            preview.appendChild(fileInfo);
-            filePreview.appendChild(preview);
+            try {
+                const response = await fetch(`${API_URL}/vaults`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'userid': currentUser
+                    },
+                    body: JSON.stringify({ name, type, expiration: expiry })
+                });
+                
+                if (response.ok) {
+                    const { hash } = await response.json();
+                    vaults.push({ name, type, hash, creator: currentUser });
+                    saveVaults();
+                    loadVaults();
+                    closeModal('create-vault-modal');
+                    showNotification(`Vault created! Share this hash with others: ${hash}`);
+                } else {
+                    showError('Failed to create vault');
+                }
+            } catch (error) {
+                console.error('Error creating vault:', error);
+                showError('Vault creation failed');
+            }
+        }
+
+        async function joinVault() {
+            const hash = document.getElementById('join-vault-hash').value;
+            const type = document.getElementById('join-vault-type').value;
             
-            // Show progress bar
-            const progressContainer = document.getElementById('progressContainer');
-            const progressBar = document.getElementById('progressBar');
-            progressContainer.style.display = 'block';
-            progressBar.style.width = '0%';
+            if (!hash) return showError('Please enter a vault hash');
             
-            // Broadcast file start
-            broadcastMessage({
-                type: 'file-start',
-                fileId: fileId,
-                name: file.name,
-                fileType: file.type,
-                size: file.size
-            });
+            try {
+                const response = await fetch(`${API_URL}/vaults/${hash}/join`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'userid': currentUser
+                    },
+                    body: JSON.stringify({ type })
+                });
+                
+                if (response.ok) {
+                    const vaultData = await response.json();
+                    vaults.push({
+                        name: vaultData.name,
+                        type: vaultData.type,
+                        hash: hash,
+                        creator: vaultData.creator,
+                        expiration: vaultData.expiration
+                    });
+                    saveVaults();
+                    loadVaults();
+                    closeModal('join-vault-modal');
+                    showNotification('Successfully joined vault!');
+                } else {
+                    const error = await response.json();
+                    showError(error.message || 'Failed to join vault');
+                }
+            } catch (error) {
+                console.error('Error joining vault:', error);
+                showError('Failed to join vault');
+            }
+        }
+
+        async function viewVault(vault) {
+            document.getElementById('home').style.display = 'none';
+            document.getElementById('vault-view').style.display = 'block';
+            currentVault = vault;
             
-            // Read file and send in chunks
-            const reader = new FileReader();
-            let offset = 0;
+            document.getElementById('current-vault-name').textContent = vault.name;
             
-            reader.onload = async function(e) {
-                if (offset >= file.size) {
-                    // File transfer complete
-                    progressContainer.style.display = 'none';
-                    showNotification(`File sent: ${file.name}`);
-                    
-                    // Add file message to vault
-                    addMessageToVault({
-                        id: fileId,
-                        sender: state.userId,
-                        fileName: file.name,
-                        fileType: file.type,
-                        fileSize: file.size,
-                        fileId: fileId,
-                        timestamp: new Date(),
-                        isFile: true
+            const expiryDate = new Date(vault.expiration);
+            const now = new Date();
+            const diff = Math.floor((expiryDate - now) / 1000);
+            
+            const days = Math.floor(diff / 86400);
+            const hours = Math.floor((diff % 86400) / 3600);
+            const minutes = Math.floor((diff % 3600) / 60);
+            
+            document.getElementById('current-vault-expiry').textContent = 
+                `Expires in: ${days}d ${hours}h ${minutes}m`;
+            
+            loadMessages();
+            
+            // Join socket room for real-time updates
+            socket.emit('join', { hash: vault.hash });
+        }
+
+        async function loadMessages() {
+            try {
+                const response = await fetch(`${API_URL}/vaults/${currentVault.hash}`);
+                const vaultData = await response.json();
+                
+                const messageContainer = document.getElementById('message-container');
+                messageContainer.innerHTML = '';
+                
+                for (const msg of vaultData.messages) {
+                    const decrypted = await decryptMessage({
+                        ciphertext: msg.content,
+                        iv: msg.iv,
+                        senderPubKey: msg.ephemeralPubKey
                     });
                     
-                    // Store file for download
-                    state.fileStorage[fileId] = file;
-                    return;
+                    const messageElement = document.createElement('div');
+                    messageElement.className = `message ${msg.sender === currentUser ? 'message-sent' : ''}`;
+                    messageElement.innerHTML = `
+                        <div>${decrypted}</div>
+                        <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+                    `;
+                    messageContainer.appendChild(messageElement);
                 }
                 
-                const chunk = e.target.result;
-                broadcastMessage({
-                    type: 'file-chunk',
-                    fileId: fileId,
-                    chunk: chunk
+                // Auto-scroll to bottom
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                showError('Failed to load messages');
+            }
+        }
+
+        async function sendMessage() {
+            const content = document.getElementById('message-input').value.trim();
+            if (!content) return;
+            
+            try {
+                // Encrypt the message
+                const encrypted = await encryptMessage(content, currentVault.creatorPubKey);
+                
+                // Send message to server
+                await fetch(`${API_URL}/vaults/${currentVault.hash}/messages`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'userid': currentUser
+                    },
+                    body: JSON.stringify({
+                        content: arrayBufferToBase64(encrypted.ciphertext),
+                        iv: arrayBufferToBase64(encrypted.iv),
+                        key: arrayBufferToBase64(encrypted.key),
+                        authTag: arrayBufferToBase64(encrypted.authTag),
+                        ephemeralPubKey: arrayBufferToBase64(encrypted.ephemeralPubKey)
+                    })
                 });
                 
-                // Update progress
-                offset += chunk.byteLength;
-                const percent = Math.floor((offset / file.size) * 100);
-                progressBar.style.width = `${percent}%`;
+                document.getElementById('message-input').value = '';
+                loadMessages();
+            } catch (error) {
+                console.error('Error sending message:', error);
+                showError('Message sending failed');
+            }
+        }
+
+        // Helper functions
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            const len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        // UI functions
+        function loadVaults() {
+            vaults = JSON.parse(localStorage.getItem('vaults') || '[]');
+            
+            const container = document.getElementById('vault-list');
+            container.innerHTML = '';
+            
+            if (vaults.length === 0) {
+                container.innerHTML = '<div class="vault">No vaults found</div>';
+                return;
+            }
+            
+            vaults.forEach(vault => {
+                const vaultElement = document.createElement('div');
+                vaultElement.className = 'vault';
                 
-                // Read next chunk
-                const slice = file.slice(offset, offset + CHUNK_SIZE);
-                reader.readAsArrayBuffer(slice);
-            };
-            
-            // Read first chunk
-            const slice = file.slice(offset, offset + CHUNK_SIZE);
-            reader.readAsArrayBuffer(slice);
-        }
-        
-        // Add message to vault
-        function addMessageToVault(message) {
-            if (!state.currentVault) return;
-            
-            state.currentVault.messages.push(message);
-            saveState();
-            renderMessages(state.currentVault.messages);
-        }
-        
-        // Broadcast message to all connections
-        function broadcastMessage(data) {
-            Object.values(state.connections).forEach(conn => {
-                if (conn.open) {
-                    console.log('Broadcasting to:', conn.peer);
-                    conn.send(data);
+                const expiryDate = new Date(vault.expiration);
+                const now = new Date();
+                
+                if (expiryDate < now) {
+                    vaultElement.innerHTML = `
+                        <div class="vault-name">${vault.name} (Expired)</div>
+                        <div class="vault-expiry">Expired on: ${expiryDate.toLocaleString()}</div>
+                    `;
+                    vaultElement.style.opacity = '0.6';
+                } else {
+                    vaultElement.innerHTML = `
+                        <div class="vault-name">${vault.name}</div>
+                        <div class="vault-expiry">${vault.type} · Expires: ${expiryDate.toLocaleString()}</div>
+                    `;
+                    vaultElement.onclick = () => viewVault(vault);
                 }
+                
+                container.appendChild(vaultElement);
             });
         }
-        
-        // Broadcast vault info to all connections
-        function broadcastVaultInfo() {
-            if (!state.currentVault) return;
-            
-            broadcastMessage({
-                type: 'vault-info',
-                vaultId: state.currentVault.id,
-                name: state.currentVault.personalName
-            });
+
+        function saveVaults() {
+            localStorage.setItem('vaults', JSON.stringify(vaults));
         }
-        
-        // Update participant count
-        function updateParticipantCount() {
-            if (!state.currentVault) return;
-            
-            const count = Object.keys(state.connections).length + 1;
-            document.getElementById('participantCount').textContent = count;
+
+        function showCreateVault() {
+            document.getElementById('create-vault-modal').style.display = 'flex';
         }
-        
-        // Update connection status UI
-        function updateConnectionStatus(status, text) {
-            const statusDot = document.getElementById('statusDot');
-            const statusText = document.getElementById('statusText');
+
+        function showJoinVault() {
+            document.getElementById('join-vault-modal').style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            document.getElementById('vault-name').value = '';
+            document.getElementById('join-vault-hash').value = '';
+        }
+
+        function backToHome() {
+            document.getElementById('home').style.display = 'block';
+            document.getElementById('vault-view').style.display = 'none';
+            currentVault = null;
+        }
+
+        function nuke() {
+            if (!confirm('Are you sure you want to delete ALL your data? This action cannot be undone.')) return;
             
-            statusDot.className = 'status-dot';
-            switch(status) {
-                case 'connected':
-                    statusDot.classList.add('status-connected');
-                    break;
-                case 'disconnected':
-                    statusDot.classList.add('status-disconnected');
-                    break;
-                case 'connecting':
-                    statusDot.classList.add('status-connecting');
-                    break;
+            try {
+                fetch(`${API_URL}/nuke`, {
+                    method: 'POST',
+                    headers: { 'userid': currentUser }
+                });
+                
+                localStorage.removeItem('userId');
+                localStorage.removeItem('vaults');
+                window.location.reload();
+            } catch (error) {
+                console.error('Error during nuke operation:', error);
+                showError('Failed to delete all data');
             }
-            
-            statusText.textContent = text;
         }
-        
-        // Copy vault URL to clipboard
-        function copyVaultUrl(vaultId) {
-            const vault = state.vaults.find(v => v.id === vaultId);
-            if (!vault) return;
-            
-            let url = `${window.location.origin}${window.location.pathname}#/vault/${vaultId}/${state.userId}`;
-            if (vault.type === 'private') {
-                url += '?private=true';
-            }
-            
-            navigator.clipboard.writeText(url).then(() => {
-                showNotification('Vault URL copied to clipboard!');
-            }).catch(err => {
-                console.error('Failed to copy: ', err);
-                showNotification('Failed to copy URL');
-            });
+
+        function showError(message) {
+            alert(message);
         }
-        
-        // Show notification
+
         function showNotification(message) {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.style.display = 'block';
-            
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 3000);
+            alert(message);
         }
-        
-        // Change application view
-        function changeView(viewName) {
-            document.querySelectorAll('.view').forEach(view => {
-                view.classList.remove('active');
-            });
-            document.getElementById(`${viewName}View`).classList.add('active');
-            state.currentView = viewName;
+
+        // WebSocket functionality
+        function initWebSocket() {
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${location.host}${API_URL}`;
             
-            // Clear any file previews when leaving vault view
-            if (viewName !== 'vault') {
-                document.getElementById('filePreview').innerHTML = '';
-                document.getElementById('progressContainer').style.display = 'none';
-                document.getElementById('messageInput').value = '';
-            }
-        }
-        
-        // Handle file selection
-        function handleFileSelect() {
-            const fileInput = document.getElementById('fileInput');
-            const filePreview = document.getElementById('filePreview');
-            
-            filePreview.innerHTML = '';
-            
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                
-                const preview = document.createElement('div');
-                preview.className = 'file-preview';
-                
-                if (file.type.startsWith('image/')) {
-                    const img = document.createElement('img');
-                    img.src = URL.createObjectURL(file);
-                    preview.appendChild(img);
+            socket = io(wsUrl, {
+                extraHeaders: {
+                    userid: currentUser
                 }
-                
-                const fileInfo = document.createElement('div');
-                fileInfo.className = 'file-info';
-                fileInfo.innerHTML = `
-                    <h4>${file.name}</h4>
-                    <p>${file.type} - ${formatFileSize(file.size)}</p>
-                `;
-                
-                preview.appendChild(fileInfo);
-                filePreview.appendChild(preview);
-            }
-        }
-        
-        // Handle initial vault join from URL
-        function handleInitialVaultJoin() {
-            if (window.location.hash.startsWith('#/vault/')) {
-                const parts = window.location.hash.split('/');
-                if (parts.length >= 3) {
-                    const vaultId = parts[2];
-                    let creatorId = parts.length >= 4 ? parts[3] : '';
+            });
+            
+            socket.on('connect_error', (error) => {
+                console.error('WebSocket connection error:', error);
+                showError('Failed to connect to server');
+            });
+            
+            socket.on('vault:message', async (data) => {
+                if (data.hash === currentVault.hash) {
+                    const decrypted = await decryptMessage({
+                        ciphertext: base64ToArrayBuffer(data.content),
+                        iv: base64ToArrayBuffer(data.iv),
+                        senderPubKey: base64ToArrayBuffer(data.ephemeralPubKey)
+                    });
                     
-                    // Remove query parameters from creator ID
-                    if (creatorId.includes('?')) {
-                        creatorId = creatorId.split('?')[0];
-                    }
+                    const messageElement = document.createElement('div');
+                    messageElement.className = `message ${data.sender === currentUser ? 'message-sent' : ''}`;
+                    messageElement.innerHTML = `
+                        <div>${decrypted}</div>
+                        <div class="message-time">${new Date(data.timestamp).toLocaleTimeString()}</div>
+                    `;
                     
-                    const isPrivate = window.location.hash.includes('private=true');
-                    
-                    const vault = state.vaults.find(v => v.id === vaultId);
-                    if (vault) {
-                        openVault(vaultId);
-                    } else {
-                        navigateTo('joinVault');
-                        document.getElementById('vaultUrl').value = window.location.href;
-                        document.getElementById('privateNameGroup').style.display = 
-                            isPrivate ? 'block' : 'none';
-                    }
-                    
-                    // Connect to the creator
-                    if (creatorId && creatorId !== state.userId) {
-                        console.log('Connecting to creator from URL:', creatorId);
-                        const conn = state.peer.connect(creatorId);
-                        setupConnection(conn);
-                    }
+                    const messageContainer = document.getElementById('message-container');
+                    messageContainer.appendChild(messageElement);
+                    messageContainer.scrollTop = messageContainer.scrollHeight;
                 }
-            }
-        }
-        
-        // Setup event listeners
-        function setupEventListeners() {
-            document.getElementById('createPrivateVault').addEventListener('click', () => {
-                document.getElementById('vaultNameLabel').textContent = 'Vault Name (Only you will see this)';
-                navigateTo('createVault');
-                state.vaultType = 'private';
-            });
-            
-            document.getElementById('createPublicVault').addEventListener('click', () => {
-                document.getElementById('vaultNameLabel').textContent = 'Vault Name (Visible to all participants)';
-                navigateTo('createVault');
-                state.vaultType = 'public';
-            });
-            
-            document.getElementById('joinVault').addEventListener('click', () => {
-                document.getElementById('privateNameGroup').style.display = 'block';
-                navigateTo('joinVault');
-            });
-            
-            // Show/hide private name field based on URL
-            document.getElementById('vaultUrl').addEventListener('input', function() {
-                const url = this.value;
-                const isPrivate = url.includes('private=true');
-                document.getElementById('privateNameGroup').style.display = isPrivate ? 'block' : 'none';
-            });
-            
-            document.getElementById('createVaultBtn').addEventListener('click', () => {
-                const name = document.getElementById('vaultName').value.trim();
-                const expiration = document.getElementById('expiration').value;
-                
-                if (!name) {
-                    showNotification('Please enter a vault name');
-                    return;
-                }
-                
-                createVault(state.vaultType, name, expiration);
-            });
-            
-            document.getElementById('cancelCreate').addEventListener('click', navigateBack);
-            
-            document.getElementById('joinVaultBtn').addEventListener('click', () => {
-                const url = document.getElementById('vaultUrl').value.trim();
-                const name = document.getElementById('personalVaultName').value.trim();
-                const isPrivate = url.includes('private=true');
-                
-                if (!url) {
-                    showNotification('Please enter a vault URL');
-                    return;
-                }
-                
-                if (isPrivate && !name) {
-                    showNotification('Please enter a name for this private vault');
-                    return;
-                }
-                
-                joinVault(url, name);
-            });
-            
-            document.getElementById('cancelJoin').addEventListener('click', navigateBack);
-            
-            document.getElementById('sendMessageBtn').addEventListener('click', sendMessage);
-            
-            document.getElementById('messageInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                }
-            });
-            
-            document.getElementById('fileInput').addEventListener('change', handleFileSelect);
-            
-            document.getElementById('copyVaultUrl').addEventListener('click', () => {
-                const url = document.getElementById('vaultUrlDisplay').textContent;
-                navigator.clipboard.writeText(url).then(() => {
-                    showNotification('URL copied to clipboard!');
-                });
-            });
-            
-            document.getElementById('goToVaultBtn').addEventListener('click', () => {
-                const vaultId = document.getElementById('vaultUrlDisplay').textContent
-                    .match(/vault\/([a-zA-Z0-9\-_]+)/)[1];
-                openVault(vaultId);
-            });
-            
-            document.getElementById('shareCancel').addEventListener('click', () => {
-                navigateTo('main');
-            });
-            
-            document.getElementById('leaveVault').addEventListener('click', () => {
-                navigateTo('main');
             });
         }
-        
-        // Start the app when DOM is loaded
-        document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
