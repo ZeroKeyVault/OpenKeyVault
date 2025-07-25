@@ -3,1408 +3,1216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Messenger - Laughing Buddha Protocol</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/libsodium-wrappers/0.7.11/sodium.min.js" async></script>
+    <title>The Platform</title>
+    <!-- Tailwind CSS CDN for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f0f0; /* Light grey background */
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
-            color: #333;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-        
-        .app-container {
-            max-width: 1200px;
-            margin: 0 auto;
+        .container {
+            background-color: #ffffff; /* White background for the main app */
+            border-radius: 1rem; /* Rounded corners for the container */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            flex-grow: 1;
             display: flex;
-            min-height: 100vh;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.05);
-            background: white;
+            flex-direction: column;
+            max-width: 1200px;
+            width: 95%;
+            margin: 1.5rem auto;
+            overflow: hidden;
         }
-        
-        /* Sidebar Styles */
+        .header {
+            background-color: #f9f9f9; /* Slightly off-white for header */
+            padding: 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #333;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+        }
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
         .sidebar {
             width: 300px;
-            background: #f8f9fa;
-            border-right: 1px solid #e9ecef;
+            background-color: #f5f5f5; /* Light grey for sidebar */
+            border-right: 1px solid #e0e0e0;
+            padding: 1.5rem;
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            position: sticky;
-            top: 0;
-        }
-        
-        .header {
-            padding: 20px;
-            border-bottom: 1px solid #e9ecef;
-            background: #ffffff;
-        }
-        
-        .header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #343a40;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .address-container {
-            margin-top: 15px;
-            background: #e9ecef;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-        }
-        
-        .address {
-            font-weight: 600;
-            color: #495057;
-            word-break: break-all;
-            font-family: monospace;
-        }
-        
-        .vault-controls {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .btn {
-            padding: 12px 15px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-        }
-        
-        .btn-primary {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background: #5a6268;
-        }
-        
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-        
-        .btn-danger:hover {
-            background: #bd2130;
-        }
-        
-        .vaults-container {
-            flex: 1;
+            gap: 1rem;
             overflow-y: auto;
-            padding: 15px;
         }
-        
-        .vault-section {
-            margin-bottom: 20px;
-        }
-        
-        .vault-section h3 {
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            color: #6c757d;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
         .vault-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        .vault-item {
-            padding: 12px 15px;
-            border-radius: 8px;
-            background: white;
-            border: 1px solid #e9ecef;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .vault-item:hover {
-            background: #f1f3f5;
-        }
-        
-        .vault-item.active {
-            border-left: 4px solid #6c757d;
-            background: #f1f3f5;
-        }
-        
-        .vault-name {
-            font-weight: 600;
-            color: #495057;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .vault-expiry {
-            font-size: 0.8rem;
-            color: #868e96;
-            margin-top: 5px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .footer {
-            padding: 20px;
-            text-align: center;
-            font-size: 0.9rem;
-            color: #6c757d;
-            border-top: 1px solid #e9ecef;
-        }
-        
-        /* Main Chat Area */
-        .chat-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-        
-        .chat-header {
-            padding: 20px;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: white;
-        }
-        
-        .chat-info h2 {
-            font-size: 1.3rem;
-            color: #343a40;
-        }
-        
-        .vault-status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 5px;
-        }
-        
-        .status-indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #28a745;
-        }
-        
-        .expiry-info {
-            font-size: 0.9rem;
-            color: #868e96;
-        }
-        
-        .messages-container {
-            flex: 1;
-            padding: 20px;
+            flex-grow: 1;
             overflow-y: auto;
-            background: #f8f9fa;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
         }
-        
-        .message {
-            max-width: 70%;
-            padding: 12px 15px;
-            border-radius: 12px;
-            position: relative;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .message.received {
-            background: white;
-            border: 1px solid #e9ecef;
-            align-self: flex-start;
-            border-top-left-radius: 5px;
-        }
-        
-        .message.sent {
-            background: #e9ecef;
-            align-self: flex-end;
-            border-top-right-radius: 5px;
-        }
-        
-        .message-content {
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-        
-        .message-meta {
+        .vault-item {
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
             display: flex;
             justify-content: space-between;
-            margin-top: 5px;
-            font-size: 0.75rem;
-            color: #868e96;
+            align-items: center;
+            border: 1px solid #e0e0e0;
         }
-        
-        .message-sender {
+        .vault-item:hover {
+            background-color: #f0f0f0;
+        }
+        .vault-item.active {
+            background-color: #e0e0e0;
             font-weight: 600;
         }
-        
-        .input-container {
-            padding: 20px;
-            border-top: 1px solid #e9ecef;
-            background: white;
-        }
-        
-        .message-input {
+        .chat-area {
+            flex-grow: 1;
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            padding: 1.5rem;
+            overflow: hidden;
         }
-        
-        .message-input textarea {
-            flex: 1;
-            padding: 12px 15px;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            resize: none;
+        .messages-display {
+            flex-grow: 1;
+            background-color: #f9f9f9;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            border: 1px solid #e0e0e0;
+        }
+        .message {
+            margin-bottom: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .message.self {
+            background-color: #e0e0e0; /* Light grey for self messages */
+            margin-left: auto;
+            text-align: right;
+        }
+        .message.other {
+            background-color: #f0f0f0; /* Even lighter grey for other messages */
+            margin-right: auto;
+            text-align: left;
+        }
+        .message-sender {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+        .message-content {
             font-size: 1rem;
-            height: 50px;
-            transition: border-color 0.3s;
+            color: #333;
         }
-        
-        .message-input textarea:focus {
+        .message-timestamp {
+            font-size: 0.7rem;
+            color: #999;
+            margin-top: 0.5rem;
+            display: block;
+        }
+        .input-area {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        .input-area input[type="text"] {
+            flex-grow: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid #ccc;
+            border-radius: 0.75rem;
+            font-size: 1rem;
             outline: none;
-            border-color: #6c757d;
         }
-        
-        .send-btn {
-            background: #6c757d;
+        .input-area button {
+            padding: 0.75rem 1.5rem;
+            background-color: #888; /* Grey for buttons */
             color: white;
             border: none;
-            border-radius: 8px;
-            width: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            border-radius: 0.75rem;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: background-color 0.2s ease;
         }
-        
-        .send-btn:hover {
-            background: #5a6268;
+        .input-area button:hover {
+            background-color: #666;
         }
-        
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            text-align: center;
-            padding: 20px;
-            color: #6c757d;
-        }
-        
-        .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            color: #ced4da;
-        }
-        
-        .empty-state h2 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-        }
-        
-        .empty-state p {
-            margin-bottom: 20px;
-            max-width: 400px;
-        }
-        
-        /* Modal Styles */
         .modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.5);
             display: flex;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             z-index: 1000;
+            visibility: hidden;
             opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
         }
-        
-        .modal.active {
+        .modal.show {
+            visibility: visible;
             opacity: 1;
-            pointer-events: all;
         }
-        
         .modal-content {
-            background: white;
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
             width: 90%;
             max-width: 500px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            transform: translateY(20px);
-            transition: transform 0.3s ease;
+            position: relative;
         }
-        
-        .modal.active .modal-content {
-            transform: translateY(0);
-        }
-        
-        .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .modal-header h3 {
-            font-size: 1.2rem;
-            color: #343a40;
-        }
-        
-        .close-btn {
-            background: none;
-            border: none;
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
             font-size: 1.5rem;
             cursor: pointer;
-            color: #6c757d;
+            color: #888;
         }
-        
-        .modal-body {
-            padding: 20px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
+        .modal-content h2 {
+            font-size: 1.75rem;
             font-weight: 600;
-            color: #495057;
-            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            color: #333;
+            text-align: center;
         }
-        
-        .form-control {
+        .modal-content label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #555;
+        }
+        .modal-content input,
+        .modal-content select {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 0.75rem;
             font-size: 1rem;
         }
-        
-        .form-control:focus {
-            outline: none;
-            border-color: #6c757d;
-        }
-        
-        .modal-footer {
-            padding: 15px 20px;
-            border-top: 1px solid #e9ecef;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-        
-        /* Hash Display */
-        .hash-display {
-            background: #e9ecef;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            word-break: break-all;
-            font-family: monospace;
-            font-size: 0.9rem;
-            text-align: center;
-        }
-        
-        .copy-hash {
-            margin-top: 10px;
-            background: #6c757d;
+        .modal-content button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #888;
             color: white;
             border: none;
-            border-radius: 6px;
-            padding: 8px 15px;
+            border-radius: 0.75rem;
             cursor: pointer;
-            font-size: 0.9rem;
-            transition: background 0.3s;
-        }
-        
-        .copy-hash:hover {
-            background: #5a6268;
-        }
-        
-        /* Nuke Confirmation */
-        .nuke-modal .modal-content {
-            background: #fff3cd;
-            border: 1px solid #ffeeba;
-        }
-        
-        .nuke-modal .modal-header {
-            background: #ffeeba;
-            border-bottom: 1px solid #ffdf7e;
-        }
-        
-        .nuke-warning {
-            text-align: center;
-            padding: 20px;
             font-size: 1.1rem;
-            line-height: 1.6;
+            transition: background-color 0.2s ease;
         }
-        
-        .nuke-icon {
-            font-size: 3rem;
-            color: #dc3545;
-            margin-bottom: 15px;
+        .modal-content button:hover {
+            background-color: #666;
         }
-        
-        /* Animations */
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        .footer {
+            text-align: center;
+            padding: 1rem;
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 1rem;
         }
-        
-        .pulse {
-            animation: pulse 2s infinite;
+        .message-file {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: #e0e0e0;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
         }
-        
-        /* Responsive */
+        .message-file svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            fill: #555;
+        }
+        .message-file span {
+            color: #333;
+            font-weight: 500;
+        }
+        .nuke-button {
+            background-color: #f44336; /* Red for Nuke button */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            text-align: center;
+            margin-top: auto; /* Pushes it to the bottom of the sidebar */
+        }
+        .nuke-button:hover {
+            background-color: #d32f2f;
+        }
+        .info-message {
+            background-color: #fff3cd;
+            color: #664d03;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ffecb3;
+            text-align: center;
+        }
+
+        /* Responsive adjustments */
         @media (max-width: 768px) {
-            .app-container {
+            .main-content {
                 flex-direction: column;
             }
-            
             .sidebar {
                 width: 100%;
-                height: auto;
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+                padding-bottom: 0;
             }
-            
-            .chat-container {
-                height: auto;
+            .chat-area {
+                padding-top: 0;
+            }
+            .vault-list {
+                max-height: 200px; /* Limit height of vault list on small screens */
+            }
+            .header {
+                font-size: 2rem;
+                padding: 1rem;
+            }
+            .modal-content {
+                padding: 1.5rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="header">
-                <h1><i class="fas fa-lock"></i> Secure Messenger</h1>
-                <div class="address-container">
-                    <div>Your Secure Address:</div>
-                    <div class="address" id="user-address">Generating...</div>
+    <div class="container">
+        <div class="header">The Platform</div>
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="info-message" id="user-id-display">
+                    Your ID: <span id="current-user-id">Generating...</span>
                 </div>
-            </div>
-            
-            <div class="vault-controls">
-                <button class="btn btn-primary" id="create-vault-btn">
-                    <i class="fas fa-plus-circle"></i> Create New Vault
-                </button>
-                <button class="btn btn-primary" id="join-vault-btn">
-                    <i class="fas fa-sign-in-alt"></i> Join Existing Vault
-                </button>
-                <button class="btn btn-danger" id="nuke-btn">
-                    <i class="fas fa-bomb"></i> Nuke Everything
-                </button>
-            </div>
-            
-            <div class="vaults-container" id="vaults-container">
-                <div class="empty-state">
-                    <i class="fas fa-comment-slash"></i>
-                    <h2>No Active Vaults</h2>
-                    <p>Create a new vault or join an existing one to start secure messaging.</p>
+                <button id="create-vault-btn" class="input-area button">Create Vault</button>
+                <button id="join-vault-btn" class="input-area button">Join Vault</button>
+
+                <div class="vault-list" id="vault-list">
+                    <!-- Vault items will be injected here -->
                 </div>
+
+                <button id="nuke-btn" class="nuke-button">Nuke All Data</button>
             </div>
-            
-            <div class="footer">
-                a Prakhar Solanki creation
-            </div>
-        </div>
-        
-        <!-- Main Chat Area -->
-        <div class="chat-container">
-            <div class="chat-header">
-                <div class="chat-info">
-                    <h2>Secure Messenger</h2>
-                    <div class="vault-status">
-                        <div class="status-indicator"></div>
-                        <div class="expiry-info">No active vault selected</div>
-                    </div>
+
+            <div class="chat-area">
+                <div id="no-vault-selected" class="info-message text-center p-4 rounded-lg bg-gray-100 text-gray-700">
+                    Select a vault to start chatting or create/join a new one.
                 </div>
-                <div class="security-info">
-                    <i class="fas fa-shield-alt"></i> Laughing Buddha Protocol
+                <div id="chat-window" class="messages-display hidden">
+                    <!-- Messages will be injected here -->
                 </div>
-            </div>
-            
-            <div class="messages-container" id="messages-container">
-                <div class="empty-state">
-                    <i class="fas fa-comments"></i>
-                    <h2>Welcome to Secure Messenger</h2>
-                    <p>Create or join a vault to start sending encrypted messages. All communication is end-to-end encrypted.</p>
-                </div>
-            </div>
-            
-            <div class="input-container">
-                <div class="message-input">
-                    <textarea id="message-input" placeholder="Join a vault to start messaging..." disabled></textarea>
-                    <button class="send-btn" id="send-btn" disabled>
-                        <i class="fas fa-paper-plane"></i>
+                <div id="chat-input-area" class="input-area hidden">
+                    <input type="text" id="message-input" placeholder="Type your message...">
+                    <input type="file" id="file-input" class="hidden" accept="*/*">
+                    <button id="attach-file-btn" title="Attach File">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                            <path fill-rule="evenodd" d="M18.97 3.659A2.25 2.25 0 0 0 17.023 2.25h-13.5A2.25 2.25 0 0 0 1.25 4.5v11.25c0 1.036.724 1.897 1.702 2.131a.75.75 0 0 0 .584.076l7.497-1.5a.75.75 0 0 0 .427-.715V6.25a.75.75 0 0 1 .75-.75h2.25a.75.75 0 0 1 .75.75v6.19l1.777.355a.75.75 0 0 0 .584-.076c.978-.234 1.702-1.095 1.702-2.131V4.5A2.25 2.25 0 0 0 18.97 3.659ZM12 15.75h.007v.008H12v-.008ZM10.5 6a.75.75 0 0 0-.75.75v4.5a.75.75 0 0 0 .75.75h.75a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75h-.75Z" clip-rule="evenodd" />
+                        </svg>
                     </button>
+                    <button id="send-message-btn">Send</button>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- Create Vault Modal -->
-    <div class="modal" id="create-vault-modal">
+    <div id="create-vault-modal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-plus-circle"></i> Create New Vault</h3>
-                <button class="close-btn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="vault-name">Vault Name</label>
-                    <input type="text" class="form-control" id="vault-name" placeholder="Enter vault name">
+            <span class="modal-close" id="create-vault-close">&times;</span>
+            <h2>Create New Vault</h2>
+            <form id="create-vault-form">
+                <label for="vault-name">Vault Name:</label>
+                <input type="text" id="vault-name" placeholder="e.g., Family Chat, Project X" required>
+
+                <label for="vault-type">Vault Type:</label>
+                <select id="vault-type" required>
+                    <option value="private">Private (Direct Message)</option>
+                    <option value="public">Public (Group)</option>
+                </select>
+
+                <label for="expiration-time">Expiration Time:</label>
+                <select id="expiration-time" required>
+                    <option value="1h">1 Hour</option>
+                    <option value="5h">5 Hours</option>
+                    <option value="24h">24 Hours</option>
+                    <option value="1mo">1 Month</option>
+                    <option value="3mo">3 Months</option>
+                    <option value="6mo">6 Months</option>
+                    <option value="1yr">1 Year</option>
+                    <option value="never">Never</option>
+                </select>
+
+                <button type="submit">Create Vault</button>
+                <div id="create-vault-hash-display" class="info-message mt-4 hidden">
+                    Vault Hash: <span id="generated-vault-hash" class="font-mono break-all"></span><br>
+                    <button id="copy-hash-btn" class="mt-2 w-auto px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm">Copy Hash</button>
                 </div>
-                
-                <div class="form-group">
-                    <label for="vault-type">Vault Type</label>
-                    <select class="form-control" id="vault-type">
-                        <option value="private">Private Vault (1:1)</option>
-                        <option value="public">Public Vault (Group)</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="expiry-time">Expiration Time</label>
-                    <select class="form-control" id="expiry-time">
-                        <option value="3600000">1 Hour</option>
-                        <option value="18000000">5 Hours</option>
-                        <option value="86400000">24 Hours</option>
-                        <option value="2592000000">1 Month</option>
-                        <option value="7776000000">3 Months</option>
-                        <option value="15552000000">6 Months</option>
-                        <option value="31536000000">1 Year</option>
-                        <option value="0">Never</option>
-                    </select>
-                </div>
-                
-                <div class="hash-display" id="vault-hash-display">
-                    Generating vault hash...
-                </div>
-                <button class="copy-hash" id="copy-hash-btn">
-                    <i class="fas fa-copy"></i> Copy Vault Hash
-                </button>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" id="create-vault-confirm">Create Vault</button>
-                <button class="btn" id="create-vault-cancel">Cancel</button>
-            </div>
+            </form>
         </div>
     </div>
-    
+
     <!-- Join Vault Modal -->
-    <div class="modal" id="join-vault-modal">
+    <div id="join-vault-modal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-sign-in-alt"></i> Join Existing Vault</h3>
-                <button class="close-btn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="vault-hash">Vault Hash</label>
-                    <input type="text" class="form-control" id="vault-hash" placeholder="Enter vault hash">
-                </div>
-                
-                <div class="form-group">
-                    <label for="join-vault-name">Vault Name (for your reference)</label>
-                    <input type="text" class="form-control" id="join-vault-name" placeholder="Enter name for this vault">
-                </div>
-                
-                <div id="hash-status"></div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" id="join-vault-confirm">Join Vault</button>
-                <button class="btn" id="join-vault-cancel">Cancel</button>
-            </div>
+            <span class="modal-close" id="join-vault-close">&times;</span>
+            <h2>Join Existing Vault</h2>
+            <form id="join-vault-form">
+                <label for="join-vault-hash">Vault Hash:</label>
+                <input type="text" id="join-vault-hash" placeholder="Enter vault hash" required>
+
+                <label for="join-vault-name">Name for this Vault (for your reference):</label>
+                <input type="text" id="join-vault-name" placeholder="e.g., John's Chat, Dev Team" required>
+
+                <button type="submit">Join Vault</button>
+            </form>
         </div>
     </div>
-    
-    <!-- Nuke Confirmation Modal -->
-    <div class="modal nuke-modal" id="nuke-modal">
+
+    <!-- Message Box for alerts -->
+    <div id="message-box" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-bomb"></i> Confirm Nuke</h3>
-                <button class="close-btn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="nuke-warning">
-                    <div class="nuke-icon pulse">
-                        <i class="fas fa-radiation"></i>
-                    </div>
-                    <p>This will permanently destroy ALL data, messages, and your secure address.</p>
-                    <p>All vaults will be vaporized and the application will close.</p>
-                    <p><strong>This action cannot be undone.</strong></p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-danger" id="confirm-nuke">NUKE EVERYTHING</button>
-                <button class="btn" id="cancel-nuke">Cancel</button>
-            </div>
+            <span class="modal-close" id="message-box-close">&times;</span>
+            <h2 id="message-box-title"></h2>
+            <p id="message-box-content" class="text-center mb-4"></p>
+            <button id="message-box-ok">OK</button>
         </div>
     </div>
+
+    <footer class="footer">
+        a Prakhar Solanki creation
+    </footer>
 
     <script>
-        // App Configuration
-        const config = {
-            // Server configuration - UPDATED FOR YOUR RENDER SERVER
-            peerServer: 'deploy-1-pab2.onrender.com',
-            serverUrl: 'wss://deploy-1-pab2.onrender.com',
-            
-            // WebRTC configuration
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:global.stun.twilio.com:3478?transport=udp' }
-            ],
-            
-            // Encryption settings
-            encryptionAlgorithm: 'AES-GCM',
-            keyLength: 256
-        };
+        // Global variables for WebSocket and user ID
+        let ws;
+        let userId;
+        let activeVaultId = null;
+        const vaults = new Map(); // Stores vaultId -> { name, type, key, iv, messages: [] }
+        // IMPORTANT: If deploying to a secure (HTTPS) server like Render, change this to 'wss://YOUR_RENDER_APP_URL'
+        // For local development, 'ws://localhost:3000' is typically correct.
+        const SERVER_URL = 'ws://localhost:3000';
 
-        // App State
-        const state = {
-            currentUser: {
-                address: '',
-                peer: null,
-                connections: {},
-                ws: null
-            },
-            currentVault: null,
-            vaults: {
-                private: [],
-                public: []
-            },
-            encryptionKey: null
-        };
+        // --- Utility Functions ---
 
-        // DOM Elements
-        const elements = {
-            userAddress: document.getElementById('user-address'),
-            createVaultBtn: document.getElementById('create-vault-btn'),
-            joinVaultBtn: document.getElementById('join-vault-btn'),
-            nukeBtn: document.getElementById('nuke-btn'),
-            createVaultModal: document.getElementById('create-vault-modal'),
-            joinVaultModal: document.getElementById('join-vault-modal'),
-            nukeModal: document.getElementById('nuke-modal'),
-            messageInput: document.getElementById('message-input'),
-            sendBtn: document.getElementById('send-btn'),
-            messagesContainer: document.getElementById('messages-container'),
-            vaultsContainer: document.getElementById('vaults-container'),
-            vaultHashDisplay: document.getElementById('vault-hash-display'),
-            copyHashBtn: document.getElementById('copy-hash-btn')
-        };
+        /**
+         * Displays a custom message box instead of alert().
+         * @param {string} title - The title of the message box.
+         * @param {string} message - The content message.
+         * @param {function} onOk - Callback function when OK is clicked.
+         */
+        function showMessageBox(title, message, onOk = () => {}) {
+            const msgBox = document.getElementById('message-box');
+            document.getElementById('message-box-title').textContent = title;
+            document.getElementById('message-box-content').textContent = message;
+            msgBox.classList.add('show');
 
-        // Initialize App
-        async function initApp() {
-            await initializeEncryption();
-            generateUserAddress();
-            initializePeerConnection();
-            connectToServer();
-            setupEventListeners();
+            const okBtn = document.getElementById('message-box-ok');
+            const closeBtn = document.getElementById('message-box-close');
+
+            const closeMessageBox = () => {
+                msgBox.classList.remove('show');
+                okBtn.removeEventListener('click', okHandler);
+                closeBtn.removeEventListener('click', closeHandler);
+                onOk();
+            };
+
+            const okHandler = () => closeMessageBox();
+            const closeHandler = () => closeMessageBox();
+
+            okBtn.addEventListener('click', okHandler);
+            closeBtn.addEventListener('click', closeHandler);
         }
 
-        // Initialize libsodium for encryption
-        async function initializeEncryption() {
-            await window.sodium.ready;
-            console.log('Libsodium initialized');
-        }
-
-        // Generate unique user address
-        function generateUserAddress() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let address = '';
-            for (let i = 0; i < 16; i++) {
-                address += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            state.currentUser.address = address;
-            elements.userAddress.textContent = address;
-        }
-
-        // Initialize PeerJS connection
-        function initializePeerConnection() {
-            state.currentUser.peer = new Peer(state.currentUser.address, {
-                host: config.peerServer,
-                port: 443,
-                path: '/peerjs',
-                secure: true,
-                config: {
-                    iceServers: config.iceServers
-                }
-            });
-
-            state.currentUser.peer.on('open', (id) => {
-                console.log('PeerJS connected with ID:', id);
-            });
-
-            state.currentUser.peer.on('connection', (conn) => {
-                console.log('Incoming connection from:', conn.peer);
-                setupConnection(conn);
-            });
-
-            state.currentUser.peer.on('error', (err) => {
-                console.error('PeerJS error:', err);
-            });
-        }
-
-        // Connect to WebSocket server
-        function connectToServer() {
+        /**
+         * Copies text to the clipboard.
+         * @param {string} text - The text to copy.
+         */
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
             try {
-                state.currentUser.ws = new WebSocket(config.serverUrl);
-                
-                state.currentUser.ws.addEventListener('open', () => {
-                    console.log('Connected to signaling server');
-                });
-                
-                state.currentUser.ws.addEventListener('message', (event) => {
-                    try {
-                        const message = JSON.parse(event.data);
-                        handleServerMessage(message);
-                    } catch (error) {
-                        console.error('Error parsing server message:', error);
-                    }
-                });
-                
-                state.currentUser.ws.addEventListener('error', (error) => {
-                    console.error('WebSocket error:', error);
-                });
-                
-                state.currentUser.ws.addEventListener('close', () => {
-                    console.log('Disconnected from signaling server');
-                });
-            } catch (error) {
-                console.error('WebSocket connection error:', error);
+                document.execCommand('copy');
+                showMessageBox('Copied!', 'Vault hash copied to clipboard.');
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+                showMessageBox('Error', 'Failed to copy hash. Please copy manually: ' + text);
             }
+            document.body.removeChild(textarea);
         }
 
-        // Handle messages from server
-        function handleServerMessage(message) {
-            switch (message.type) {
-                case 'vault_joined':
-                    handleVaultJoined(message);
-                    break;
-                case 'vault_messages':
-                    handleOfflineMessages(message);
-                    break;
-                case 'error':
-                    console.error('Server error:', message.message);
-                    break;
-                default:
-                    console.log('Received server message:', message);
-            }
-        }
-
-        // Set up a data connection
-        function setupConnection(conn) {
-            conn.on('open', () => {
-                console.log('Connected to peer:', conn.peer);
-                state.currentUser.connections[conn.peer] = conn;
-                
-                conn.on('data', async (data) => {
-                    if (data.type === 'message') {
-                        try {
-                            const decrypted = await decryptMessage(data.content);
-                            addMessage(decrypted, 'received', 'Peer');
-                        } catch (error) {
-                            console.error('Error decrypting message:', error);
-                        }
-                    }
-                });
+        /**
+         * Converts a File object to a Base64 string.
+         * @param {File} file - The file to convert.
+         * @returns {Promise<string>} A promise that resolves with the Base64 string.
+         */
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
             });
         }
 
-        // Set up event listeners
-        function setupEventListeners() {
-            // Modal open buttons
-            elements.createVaultBtn.addEventListener('click', () => toggleModal(elements.createVaultModal));
-            elements.joinVaultBtn.addEventListener('click', () => toggleModal(elements.joinVaultModal));
-            elements.nukeBtn.addEventListener('click', () => toggleModal(elements.nukeModal));
-            
-            // Modal close buttons
-            document.querySelectorAll('.close-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.modal').forEach(modal => {
-                        modal.classList.remove('active');
-                    });
-                });
-            });
-            
-            // Cancel buttons
-            document.getElementById('create-vault-cancel').addEventListener('click', () => toggleModal(elements.createVaultModal));
-            document.getElementById('join-vault-cancel').addEventListener('click', () => toggleModal(elements.joinVaultModal));
-            document.getElementById('cancel-nuke').addEventListener('click', () => toggleModal(elements.nukeModal));
-            
-            // Action buttons
-            document.getElementById('create-vault-confirm').addEventListener('click', createVault);
-            document.getElementById('join-vault-confirm').addEventListener('click', joinVault);
-            document.getElementById('confirm-nuke').addEventListener('click', nukeEverything);
-            
-            // Copy hash button
-            elements.copyHashBtn.addEventListener('click', copyVaultHash);
-            
-            // Send message
-            elements.sendBtn.addEventListener('click', sendMessage);
-            elements.messageInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
+        /**
+         * Converts a Base64 string back to a Blob.
+         * @param {string} base64 - The Base64 string.
+         * @param {string} mimeType - The MIME type of the original file.
+         * @returns {Blob} The Blob object.
+         */
+        function base64ToBlob(base64, mimeType) {
+            const byteString = atob(base64.split(',')[1]);
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+            }
+            return new Blob([ab], { type: mimeType });
+        }
+
+        /**
+         * Downloads a file from Base64 data.
+         * @param {string} base64Data - The Base64 encoded file data.
+         * @param {string} filename - The name of the file to download.
+         * @param {string} mimeType - The MIME type of the file.
+         */
+        function downloadFile(base64Data, filename, mimeType) {
+            const blob = base64ToBlob(base64Data, mimeType);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // --- Cryptography (The Laughing Buddha Protocol) ---
+
+        /**
+         * Generates a random AES-GCM key.
+         * @returns {Promise<CryptoKey>} The generated key.
+         */
+        async function generateAesKey() {
+            return crypto.subtle.generateKey(
+                { name: "AES-GCM", length: 256 },
+                true, // extractable
+                ["encrypt", "decrypt"]
+            );
+        }
+
+        /**
+         * Derives a cryptographic key from a given password (hash) using PBKDF2.
+         * This is used to encrypt/decrypt the vault's main AES key.
+         * @param {string} password - The vault hash (password).
+         * @param {Uint8Array} salt - A unique salt for key derivation.
+         * @returns {Promise<CryptoKey>} The derived key.
+         */
+        async function deriveKeyFromHash(password, salt) {
+            const enc = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                "raw",
+                enc.encode(password),
+                { name: "PBKDF2" },
+                false,
+                ["deriveBits", "deriveKey"]
+            );
+            return crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt: salt,
+                    iterations: 100000, // High iterations for security
+                    hash: "SHA-256",
+                },
+                keyMaterial,
+                { name: "AES-GCM", length: 256 },
+                true, // extractable
+                ["encrypt", "decrypt"]
+            );
+        }
+
+        /**
+         * Encrypts data using AES-GCM.
+         * @param {ArrayBuffer} data - The data to encrypt.
+         * @param {CryptoKey} key - The AES-GCM key.
+         * @returns {Promise<{encryptedData: ArrayBuffer, iv: Uint8Array}>} Encrypted data and IV.
+         */
+        async function encryptData(data, key) {
+            const iv = crypto.getRandomValues(new Uint8Array(16)); // 96-bit IV recommended for AES-GCM
+            const encryptedData = await crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv },
+                key,
+                data
+            );
+            return { encryptedData, iv };
+        }
+
+        /**
+         * Decrypts data using AES-GCM.
+         * @param {ArrayBuffer} encryptedData - The encrypted data.
+         * @param {Uint8Array} iv - The IV used for encryption.
+         * @param {CryptoKey} key - The AES-GCM key.
+         * @returns {Promise<ArrayBuffer>} The decrypted data.
+         */
+        async function decryptData(encryptedData, iv, key) {
+            try {
+                return await crypto.subtle.decrypt(
+                    { name: "AES-GCM", iv: iv },
+                    key,
+                    encryptedData
+                );
+            } catch (e) {
+                console.error("Decryption failed:", e);
+                throw new Error("Decryption failed. Key or data might be corrupted.");
+            }
+        }
+
+        /**
+         * Exports a CryptoKey to a raw ArrayBuffer.
+         * @param {CryptoKey} key - The key to export.
+         * @returns {Promise<ArrayBuffer>} The raw key data.
+         */
+        async function exportKey(key) {
+            return crypto.subtle.exportKey("raw", key);
+        }
+
+        /**
+         * Imports a raw ArrayBuffer into a CryptoKey.
+         * @param {ArrayBuffer} rawKey - The raw key data.
+         * @returns {Promise<CryptoKey>} The imported key.
+         */
+        async function importKey(rawKey) {
+            return crypto.subtle.importKey(
+                "raw",
+                rawKey,
+                { name: "AES-GCM", length: 256 },
+                true,
+                ["encrypt", "decrypt"]
+            );
+        }
+
+        /**
+         * Encrypts a string message.
+         * @param {string} message - The message string.
+         * @param {CryptoKey} key - The AES-GCM key for the vault.
+         * @returns {Promise<{encryptedMessage: string, iv: string}>} Base64 encoded encrypted message and IV.
+         */
+        async function encryptMessage(message, key) {
+            const enc = new TextEncoder();
+            const encoded = enc.encode(message);
+            const { encryptedData, iv } = await encryptData(encoded, key);
+            return {
+                encryptedMessage: btoa(String.fromCharCode(...new Uint8Array(encryptedData))),
+                iv: btoa(String.fromCharCode(...iv))
+            };
+        }
+
+        /**
+         * Decrypts a string message.
+         * @param {string} encryptedMessageB64 - Base64 encoded encrypted message.
+         * @param {string} ivB64 - Base64 encoded IV.
+         * @param {CryptoKey} key - The AES-GCM key for the vault.
+         * @returns {Promise<string>} The decrypted message string.
+         */
+        async function decryptMessage(encryptedMessageB64, ivB64, key) {
+            try {
+                const encryptedData = Uint8Array.from(atob(encryptedMessageB64), c => c.charCodeAt(0));
+                const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
+                const decryptedData = await decryptData(encryptedData, iv, key);
+                const dec = new TextDecoder();
+                return dec.decode(decryptedData);
+            } catch (e) {
+                console.error("Error decrypting message:", e);
+                return "[Could not decrypt message]";
+            }
+        }
+
+        // --- WebSocket Communication ---
+
+        /**
+         * Initializes the WebSocket connection.
+         */
+        function initWebSocket() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
+            }
+            console.warn(`Attempting to connect to WebSocket server at: ${SERVER_URL}`); // Use warn for visibility
+            ws = new WebSocket(SERVER_URL);
+
+            ws.onopen = () => {
+                console.log('WebSocket connected.');
+                // Send user ID to server upon connection
+                ws.send(JSON.stringify({ type: 'register', userId: userId }));
+                loadVaultsFromLocalStorage(); // Load vaults after connection is established
+            };
+
+            ws.onmessage = async (event) => {
+                let data;
+                try {
+                    data = JSON.parse(event.data);
+                } catch (e) {
+                    console.error("Failed to parse incoming WebSocket message:", e, event.data);
+                    showMessageBox('Data Error', 'Received malformed data from server.');
+                    return;
                 }
-            });
-        }
+                console.log('Received:', data);
 
-        // Toggle modal visibility
-        function toggleModal(modal) {
-            if (modal.id === 'create-vault-modal') {
-                generateVaultHash();
-            }
-            modal.classList.toggle('active');
-        }
+                switch (data.type) {
+                    case 'vault_created':
+                        // Server sends back the hash and encrypted key for the creator
+                        const { vaultId, vaultHash, vaultName, vaultType, expiration, encryptedKeyB64, ivB64, saltB64 } = data;
+                        const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+                        const derivedKeyForVaultKey = await deriveKeyFromHash(vaultHash, salt);
+                        const decryptedVaultKeyRaw = await decryptData(
+                            Uint8Array.from(atob(encryptedKeyB64), c => c.charCodeAt(0)),
+                            Uint8Array.from(atob(ivB64), c => c.charCodeAt(0)),
+                            derivedKeyForVaultKey
+                        );
+                        const vaultAesKey = await importKey(decryptedVaultKeyRaw);
 
-        // Generate a random vault hash
-        function generateVaultHash() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let hash = '';
-            for (let i = 0; i < 32; i++) {
-                hash += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            elements.vaultHashDisplay.textContent = hash;
-        }
-
-        // Copy vault hash to clipboard
-        function copyVaultHash() {
-            navigator.clipboard.writeText(elements.vaultHashDisplay.textContent)
-                .then(() => {
-                    const btn = elements.copyHashBtn;
-                    const originalText = btn.innerHTML;
-                    btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                    setTimeout(() => {
-                        btn.innerHTML = originalText;
-                    }, 2000);
-                });
-        }
-
-        // Create a new vault
-        function createVault() {
-            const name = document.getElementById('vault-name').value;
-            const type = document.getElementById('vault-type').value;
-            const expiryValue = parseInt(document.getElementById('expiry-time').value);
-            
-            if (!name) {
-                alert('Please enter a vault name');
-                return;
-            }
-            
-            const now = new Date();
-            let expiryDate;
-            
-            if (expiryValue === 0) {
-                expiryDate = new Date(now.getFullYear() + 10, now.getMonth(), now.getDate());
-            } else {
-                expiryDate = new Date(now.getTime() + expiryValue);
-            }
-            
-            const vault = {
-                id: 'v' + Date.now(),
-                name: name,
-                type: type,
-                hash: elements.vaultHashDisplay.textContent,
-                expiry: expiryDate,
-                messages: [],
-                peers: []
-            };
-            
-            if (type === 'private') {
-                state.vaults.private.push(vault);
-            } else {
-                state.vaults.public.push(vault);
-            }
-            
-            renderVaults();
-            selectVault(vault);
-            toggleModal(elements.createVaultModal);
-            
-            // Enable messaging
-            elements.messageInput.disabled = false;
-            elements.messageInput.placeholder = "Type your secure message...";
-            elements.sendBtn.disabled = false;
-            
-            // Notify server about vault creation
-            if (state.currentUser.ws && state.currentUser.ws.readyState === WebSocket.OPEN) {
-                state.currentUser.ws.send(JSON.stringify({
-                    type: 'create_vault',
-                    vaultId: vault.id,
-                    vaultType: type,
-                    vaultHash: vault.hash,
-                    expiry: expiryValue
-                }));
-            }
-        }
-
-        // Join an existing vault
-        function joinVault() {
-            const hash = document.getElementById('vault-hash').value;
-            const name = document.getElementById('join-vault-name').value;
-            
-            if (!hash || !name) {
-                document.getElementById('hash-status').innerHTML = '<p style="color: #dc3545;">Please enter both hash and name</p>';
-                return;
-            }
-            
-            if (hash.length < 32) {
-                document.getElementById('hash-status').innerHTML = '<p style="color: #dc3545;">Invalid vault hash format</p>';
-                return;
-            }
-            
-            document.getElementById('hash-status').innerHTML = '<p style="color: #28a745;">Connecting to vault...</p>';
-            
-            // Notify server about joining
-            if (state.currentUser.ws && state.currentUser.ws.readyState === WebSocket.OPEN) {
-                state.currentUser.ws.send(JSON.stringify({
-                    type: 'join_vault',
-                    vaultHash: hash,
-                    vaultName: name
-                }));
-            }
-        }
-
-        // Handle vault join success
-        function handleVaultJoined(message) {
-            const vault = {
-                id: 'v' + Date.now(),
-                name: message.vaultName || 'New Vault',
-                type: message.vaultType || 'private',
-                hash: message.vaultHash,
-                expiry: new Date(Date.now() + (message.expiry || 86400000)),
-                messages: [],
-                peers: []
-            };
-            
-            if (vault.type === 'private') {
-                state.vaults.private.push(vault);
-            } else {
-                state.vaults.public.push(vault);
-            }
-            
-            renderVaults();
-            selectVault(vault);
-            toggleModal(elements.joinVaultModal);
-            
-            // Enable messaging
-            elements.messageInput.disabled = false;
-            elements.messageInput.placeholder = "Type your secure message...";
-            elements.sendBtn.disabled = false;
-            
-            // Request offline messages
-            requestOfflineMessages(vault.id);
-        }
-
-        // Request offline messages from server
-        function requestOfflineMessages(vaultId) {
-            if (state.currentUser.ws && state.currentUser.ws.readyState === WebSocket.OPEN) {
-                state.currentUser.ws.send(JSON.stringify({
-                    type: 'fetch_messages',
-                    vaultId: vaultId
-                }));
-            }
-        }
-
-        // Handle offline messages from server
-        function handleOfflineMessages(message) {
-            if (!state.currentVault || state.currentVault.id !== message.vaultId) return;
-            
-            if (message.messages && message.messages.length > 0) {
-                message.messages.forEach(async (msg) => {
-                    try {
-                        const decrypted = await decryptMessage(msg.data);
-                        addMessage(decrypted, 'received', 'Peer');
-                        
-                        // Add to vault messages
-                        state.currentVault.messages.push({
-                            content: decrypted,
-                            type: 'received',
-                            sender: 'Peer',
-                            timestamp: new Date(msg.timestamp)
+                        vaults.set(vaultId, {
+                            id: vaultId,
+                            name: vaultName,
+                            type: vaultType,
+                            expiration: expiration,
+                            key: vaultAesKey,
+                            messages: []
                         });
-                    } catch (error) {
-                        console.error('Error decrypting offline message:', error);
-                    }
-                });
-            }
+                        saveVaultsToLocalStorage();
+                        renderVaultList();
+                        document.getElementById('generated-vault-hash').textContent = vaultHash;
+                        document.getElementById('create-vault-hash-display').classList.remove('hidden');
+                        showMessageBox('Vault Created!', `Your vault "${vaultName}" has been created. Share this hash: ${vaultHash}`, () => {
+                            // Automatically select the new vault after creation
+                            selectVault(vaultId);
+                        });
+                        break;
+                    case 'vault_joined':
+                        // Server sends back the encrypted key for the joiner
+                        const { joinedVaultId, joinedVaultName, joinedVaultType, joinedExpiration, encryptedKeyB64: joinedEncryptedKeyB64, ivB64: joinedIvB64, saltB64: joinedSaltB64, vaultHash: joinHashUsed } = data;
+                        const joinSalt = Uint8Array.from(atob(joinedSaltB64), c => c.charCodeAt(0));
+                        const derivedKeyForJoinedVaultKey = await deriveKeyFromHash(joinHashUsed, joinSalt);
+                        const decryptedJoinedVaultKeyRaw = await decryptData(
+                            Uint8Array.from(atob(joinedEncryptedKeyB64), c => c.charCodeAt(0)),
+                            Uint8Array.from(atob(joinedIvB64), c => c.charCodeAt(0)),
+                            derivedKeyForJoinedVaultKey
+                        );
+                        const joinedVaultAesKey = await importKey(decryptedJoinedVaultKeyRaw);
+
+                        vaults.set(joinedVaultId, {
+                            id: joinedVaultId,
+                            name: joinedVaultName,
+                            type: joinedVaultType,
+                            expiration: joinedExpiration,
+                            key: joinedVaultAesKey,
+                            messages: []
+                        });
+                        saveVaultsToLocalStorage();
+                        renderVaultList();
+                        showMessageBox('Vault Joined!', `You have joined "${joinedVaultName}".`, () => {
+                            selectVault(joinedVaultId);
+                        });
+                        break;
+                    case 'new_message':
+                        const { vaultId: msgVaultId, senderId, encryptedMessage, iv, timestamp, isFile, fileName, fileMimeType } = data;
+                        const vault = vaults.get(msgVaultId);
+                        if (vault) {
+                            try {
+                                const decryptedContent = await decryptMessage(encryptedMessage, iv, vault.key);
+                                const messageObj = {
+                                    sender: senderId,
+                                    content: decryptedContent,
+                                    timestamp: timestamp,
+                                    isFile: isFile,
+                                    fileName: fileName,
+                                    fileMimeType: fileMimeType
+                                };
+                                vault.messages.push(messageObj);
+                                saveVaultsToLocalStorage();
+                                if (activeVaultId === msgVaultId) {
+                                    displayMessage(messageObj);
+                                }
+                            } catch (e) {
+                                console.error("Failed to decrypt incoming message:", e);
+                                // Display a placeholder or error message if decryption fails
+                                const messageObj = {
+                                    sender: senderId,
+                                    content: "[Decryption Failed]",
+                                    timestamp: timestamp,
+                                    isFile: false // Assume not a file if decryption failed
+                                };
+                                vault.messages.push(messageObj);
+                                saveVaultsToLocalStorage();
+                                if (activeVaultId === msgVaultId) {
+                                    displayMessage(messageObj);
+                                }
+                            }
+                        }
+                        break;
+                    case 'offline_messages':
+                        for (const msg of data.messages) {
+                            const { vaultId: msgVaultId, senderId, encryptedMessage, iv, timestamp, isFile, fileName, fileMimeType } = msg;
+                            const vault = vaults.get(msgVaultId);
+                            if (vault) {
+                                try {
+                                    const decryptedContent = await decryptMessage(encryptedMessage, iv, vault.key);
+                                    const messageObj = {
+                                        sender: senderId,
+                                        content: decryptedContent,
+                                        timestamp: timestamp,
+                                        isFile: isFile,
+                                        fileName: fileName,
+                                        fileMimeType: fileMimeType
+                                    };
+                                    vault.messages.push(messageObj);
+                                } catch (e) {
+                                    console.error("Failed to decrypt offline message:", e);
+                                    vault.messages.push({
+                                        sender: senderId,
+                                        content: "[Decryption Failed]",
+                                        timestamp: timestamp,
+                                        isFile: false
+                                    });
+                                }
+                            }
+                        }
+                        saveVaultsToLocalStorage();
+                        if (activeVaultId) {
+                            renderChatMessages(activeVaultId); // Re-render if current vault received offline messages
+                        }
+                        break;
+                    case 'error':
+                        showMessageBox('Error', data.message);
+                        break;
+                    case 'vault_expired_notification':
+                        const { expiredVaultId, expiredVaultName } = data;
+                        vaults.delete(expiredVaultId);
+                        saveVaultsToLocalStorage();
+                        renderVaultList();
+                        if (activeVaultId === expiredVaultId) {
+                            activeVaultId = null;
+                            document.getElementById('chat-window').classList.add('hidden');
+                            document.getElementById('chat-input-area').classList.add('hidden');
+                            document.getElementById('no-vault-selected').classList.remove('hidden');
+                        }
+                        showMessageBox('Vault Expired', `The vault "${expiredVaultName}" has expired and all its data has been wiped.`);
+                        break;
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected. Attempting to reconnect in 5 seconds...');
+                setTimeout(initWebSocket, 5000);
+            };
+
+            ws.onerror = (event) => {
+                console.error('WebSocket error event:', event);
+                // The 'event' object for a WebSocket 'onerror' is often a generic 'Event'
+                // and the actual network error details are typically found in the browser's console.
+                // This message aims to guide the user to common causes.
+                showMessageBox('Connection Error',
+                    `Could not connect to the server at ${SERVER_URL}. ` +
+                    `Please ensure:
+                    1. The Node.js server is running.
+                    2. The SERVER_URL in index.html is correct.
+                    3. If deployed (e.g., to Render), use 'wss://' for the SERVER_URL.`);
+            };
         }
 
-        // Render vault lists
-        function renderVaults() {
-            const privateList = document.getElementById('private-vaults') || createVaultList('private');
-            const publicList = document.getElementById('public-vaults') || createVaultList('public');
-            
-            // Clear lists
-            privateList.innerHTML = '';
-            publicList.innerHTML = '';
-            
-            // Render private vaults
-            if (state.vaults.private.length > 0) {
-                state.vaults.private.forEach(vault => {
-                    const daysLeft = Math.ceil((vault.expiry - new Date()) / (1000 * 60 * 60 * 24));
-                    const vaultEl = document.createElement('div');
-                    vaultEl.className = 'vault-item';
-                    if (state.currentVault && state.currentVault.id === vault.id) {
-                        vaultEl.classList.add('active');
-                    }
-                    vaultEl.innerHTML = `
-                        <div class="vault-name"><i class="fas fa-user-secret"></i> ${vault.name}</div>
-                        <div class="vault-expiry"><i class="fas fa-clock"></i> Expires: ${daysLeft > 1 ? `${daysLeft} days` : 'today'}</div>
-                    `;
-                    vaultEl.addEventListener('click', () => selectVault(vault));
-                    privateList.appendChild(vaultEl);
-                });
-            }
-            
-            // Render public vaults
-            if (state.vaults.public.length > 0) {
-                state.vaults.public.forEach(vault => {
-                    const monthsLeft = Math.ceil((vault.expiry - new Date()) / (1000 * 60 * 60 * 24 * 30));
-                    const vaultEl = document.createElement('div');
-                    vaultEl.className = 'vault-item';
-                    if (state.currentVault && state.currentVault.id === vault.id) {
-                        vaultEl.classList.add('active');
-                    }
-                    vaultEl.innerHTML = `
-                        <div class="vault-name"><i class="fas fa-users"></i> ${vault.name}</div>
-                        <div class="vault-expiry"><i class="fas fa-clock"></i> Expires: ${monthsLeft} months</div>
-                    `;
-                    vaultEl.addEventListener('click', () => selectVault(vault));
-                    publicList.appendChild(vaultEl);
-                });
-            }
-            
-            // Show empty state if no vaults
-            if (state.vaults.private.length === 0 && state.vaults.public.length === 0) {
-                elements.vaultsContainer.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-comment-slash"></i>
-                        <h2>No Active Vaults</h2>
-                        <p>Create a new vault or join an existing one to start secure messaging.</p>
-                    </div>
-                `;
-            }
-        }
-
-        // Create vault list section
-        function createVaultList(type) {
-            const section = document.createElement('div');
-            section.className = 'vault-section';
-            
-            const title = document.createElement('h3');
-            title.innerHTML = `<i class="fas ${type === 'private' ? 'fa-user-secret' : 'fa-users'}"></i> ${type === 'private' ? 'Private' : 'Public'} Vaults`;
-            
-            const list = document.createElement('div');
-            list.className = 'vault-list';
-            list.id = `${type}-vaults`;
-            
-            section.appendChild(title);
-            section.appendChild(list);
-            
-            elements.vaultsContainer.innerHTML = '';
-            elements.vaultsContainer.appendChild(section);
-            
-            return list;
-        }
-
-        // Select a vault
-        function selectVault(vault) {
-            state.currentVault = vault;
-            renderVaults();
-            
-            // Update chat header
-            document.querySelector('.chat-info h2').textContent = vault.name;
-            
-            // Update expiry info
-            const expiryEl = document.querySelector('.expiry-info');
-            const daysLeft = Math.ceil((vault.expiry - new Date()) / (1000 * 60 * 60 * 24));
-            expiryEl.textContent = `Vault expires in ${daysLeft} days`;
-            
-            // Clear messages
-            elements.messagesContainer.innerHTML = '';
-            
-            // Render vault messages
-            if (vault.messages.length > 0) {
-                vault.messages.forEach(msg => {
-                    addMessage(msg.content, msg.type, msg.sender);
-                });
+        /**
+         * Sends a message to the WebSocket server.
+         * @param {object} message - The message object to send.
+         */
+        function sendMessageToServer(message) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(message));
             } else {
-                elements.messagesContainer.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-comments"></i>
-                        <h2>No Messages Yet</h2>
-                        <p>Start the conversation by sending your first secure message.</p>
-                    </div>
-                `;
+                showMessageBox('Connection Error', 'Not connected to server. Please wait or refresh.');
             }
-            
-            // Request offline messages
-            requestOfflineMessages(vault.id);
         }
 
-        // Send a message
-        async function sendMessage() {
-            const message = elements.messageInput.value.trim();
-            if (!message || !state.currentVault) return;
-            
-            // Add message to UI
-            addMessage(message, 'sent', 'You');
-            
-            // Add to vault messages
-            state.currentVault.messages.push({
-                content: message,
-                type: 'sent',
-                sender: 'You',
-                timestamp: new Date()
-            });
-            
-            // Clear input
-            elements.messageInput.value = '';
-            
-            try {
-                // Encrypt message
-                const encrypted = await encryptMessage(message);
-                
-                // Try to send via P2P
-                const peerConnected = false; // In a real app, this would check actual connections
-                
-                if (peerConnected) {
-                    // Send via WebRTC
-                    console.log('Sending via P2P');
-                } else {
-                    // Send via server relay
-                    if (state.currentUser.ws && state.currentUser.ws.readyState === WebSocket.OPEN) {
-                        state.currentUser.ws.send(JSON.stringify({
-                            type: 'relay_message',
-                            vaultId: state.currentVault.id,
-                            encryptedData: encrypted
-                        }));
-                        console.log('Message sent via server relay');
-                    } else {
-                        console.error('WebSocket not connected, message not sent');
+        // --- Local Storage Management ---
+
+        /**
+         * Saves all vaults data to localStorage.
+         * Note: CryptoKey objects cannot be directly stored. We export them to raw ArrayBuffer (Base64)
+         * and re-import them when loading.
+         */
+        async function saveVaultsToLocalStorage() {
+            const serializableVaults = [];
+            for (const [id, vault] of vaults.entries()) {
+                const exportedKey = await exportKey(vault.key);
+                serializableVaults.push({
+                    id: vault.id,
+                    name: vault.name,
+                    type: vault.type,
+                    expiration: vault.expiration,
+                    key: btoa(String.fromCharCode(...new Uint8Array(exportedKey))), // Base64 encode key
+                    messages: vault.messages // Messages are already serializable
+                });
+            }
+            localStorage.setItem('thePlatformVaults', JSON.stringify(serializableVaults));
+            console.log("Vaults saved to localStorage.");
+        }
+
+        /**
+         * Loads vaults data from localStorage.
+         */
+        async function loadVaultsFromLocalStorage() {
+            const storedVaults = localStorage.getItem('thePlatformVaults');
+            if (storedVaults) {
+                const parsedVaults = JSON.parse(storedVaults);
+                for (const serializedVault of parsedVaults) {
+                    try {
+                        const importedKey = await importKey(Uint8Array.from(atob(serializedVault.key), c => c.charCodeAt(0)));
+                        vaults.set(serializedVault.id, {
+                            id: serializedVault.id,
+                            name: serializedVault.name,
+                            type: serializedVault.type,
+                            expiration: serializedVault.expiration,
+                            key: importedKey,
+                            messages: serializedVault.messages || []
+                        });
+                    } catch (e) {
+                        console.error("Failed to load vault from localStorage:", serializedVault.id, e);
+                        // Optionally remove corrupted vault or notify user
                     }
                 }
-            } catch (error) {
-                console.error('Error sending message:', error);
+                renderVaultList();
+                // If there are vaults, select the first one by default or previously active
+                if (vaults.size > 0) {
+                    const lastActiveVaultId = sessionStorage.getItem('lastActiveVaultId');
+                    if (lastActiveVaultId && vaults.has(lastActiveVaultId)) {
+                        selectVault(lastActiveVaultId);
+                    } else {
+                        selectVault(vaults.keys().next().value);
+                    }
+                }
+                console.log("Vaults loaded from localStorage.");
             }
         }
 
-        // Add message to UI
-        function addMessage(content, type, sender) {
-            // Remove empty state if present
-            if (elements.messagesContainer.querySelector('.empty-state')) {
-                elements.messagesContainer.innerHTML = '';
-            }
-            
-            const now = new Date();
-            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
-            const messageEl = document.createElement('div');
-            messageEl.className = `message ${type}`;
-            messageEl.innerHTML = `
-                <div class="message-content">${content}</div>
-                <div class="message-meta">
-                    <span class="message-sender">${sender}</span>
-                    <span class="message-time">${timeString}</span>
+        /**
+         * Clears all local data (vaults, messages, user ID).
+         */
+        function nukeAllData() {
+            localStorage.removeItem('thePlatformVaults');
+            sessionStorage.removeItem('thePlatformUserId');
+            sessionStorage.removeItem('lastActiveVaultId');
+            vaults.clear();
+            activeVaultId = null;
+            document.getElementById('chat-window').innerHTML = '';
+            document.getElementById('vault-list').innerHTML = '';
+            document.getElementById('chat-window').classList.add('hidden');
+            document.getElementById('chat-input-area').classList.add('hidden');
+            document.getElementById('no-vault-selected').classList.remove('hidden');
+            document.getElementById('current-user-id').textContent = 'Nuked! Reopen for new ID.';
+
+            // Inform server to remove user's data
+            sendMessageToServer({ type: 'nuke', userId: userId });
+
+            // Simulate closing the page by clearing content and displaying a message
+            document.body.innerHTML = `
+                <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-gray-700">
+                    <h1 class="text-4xl font-bold mb-4">Data Nuked!</h1>
+                    <p class="text-lg">All your local data has been wiped.</p>
+                    <p class="text-lg">To start fresh, please reopen "The Platform".</p>
                 </div>
             `;
-            
-            elements.messagesContainer.appendChild(messageEl);
-            elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+            // Optionally, you could redirect to a blank page or a simple "nuked" page
+            // window.location.href = 'about:blank'; // This might not work in all iframe contexts
         }
 
-        // Encrypt message using Web Crypto API
-        async function encryptMessage(message) {
-            try {
-                // Generate a random key
-                const key = await window.crypto.subtle.generateKey(
-                    { 
-                        name: config.encryptionAlgorithm, 
-                        length: config.keyLength 
-                    },
-                    true,
-                    ['encrypt', 'decrypt']
-                );
-                
-                // Export the key for storage
-                const exportedKey = await window.crypto.subtle.exportKey('jwk', key);
-                
-                // Generate IV
-                const iv = window.crypto.getRandomValues(new Uint8Array(12));
-                
-                // Encrypt the message
-                const encoded = new TextEncoder().encode(message);
-                const encrypted = await window.crypto.subtle.encrypt(
-                    { 
-                        name: config.encryptionAlgorithm, 
-                        iv: iv 
-                    },
-                    key,
-                    encoded
-                );
-                
-                return {
-                    ciphertext: Array.from(new Uint8Array(encrypted)),
-                    iv: Array.from(iv),
-                    key: exportedKey
-                };
-            } catch (err) {
-                console.error('Encryption error:', err);
-                return message; // Fallback to plaintext
+        // --- UI Rendering ---
+
+        /**
+         * Renders the list of vaults in the sidebar.
+         */
+        function renderVaultList() {
+            const vaultListDiv = document.getElementById('vault-list');
+            vaultListDiv.innerHTML = '';
+            if (vaults.size === 0) {
+                vaultListDiv.innerHTML = '<p class="text-center text-gray-500 text-sm mt-4">No vaults yet. Create or join one!</p>';
             }
+            vaults.forEach(vault => {
+                const vaultItem = document.createElement('div');
+                vaultItem.className = `vault-item ${activeVaultId === vault.id ? 'active' : ''}`;
+                vaultItem.dataset.vaultId = vault.id;
+                vaultItem.innerHTML = `
+                    <span>${vault.name} (${vault.type === 'private' ? 'DM' : 'Group'})</span>
+                    <span class="text-xs text-gray-500">${vault.expiration === 'never' ? 'Never Exp.' : `Exp: ${vault.expiration}`}</span>
+                `;
+                vaultItem.addEventListener('click', () => selectVault(vault.id));
+                vaultListDiv.appendChild(vaultItem);
+            });
         }
 
-        // Decrypt message
-        async function decryptMessage(encryptedData) {
-            try {
-                // Import the key
-                const key = await window.crypto.subtle.importKey(
-                    'jwk',
-                    encryptedData.key,
-                    { 
-                        name: config.encryptionAlgorithm, 
-                        length: config.keyLength 
-                    },
-                    false,
-                    ['decrypt']
-                );
-                
-                // Decrypt the message
-                const decrypted = await window.crypto.subtle.decrypt(
-                    { 
-                        name: config.encryptionAlgorithm, 
-                        iv: new Uint8Array(encryptedData.iv) 
-                    },
-                    key,
-                    new Uint8Array(encryptedData.ciphertext)
-                );
-                
-                return new TextDecoder().decode(decrypted);
-            } catch (err) {
-                console.error('Decryption error:', err);
-                return "Unable to decrypt message";
+        /**
+         * Displays a single message in the chat window.
+         * @param {object} message - The message object.
+         */
+        function displayMessage(message) {
+            const chatWindow = document.getElementById('chat-window');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${message.sender === userId ? 'self' : 'other'}`;
+
+            const senderSpan = document.createElement('div');
+            senderSpan.className = 'message-sender';
+            senderSpan.textContent = message.sender === userId ? 'You' : `User: ${message.sender.substring(0, 8)}...`;
+            messageDiv.appendChild(senderSpan);
+
+            if (message.isFile) {
+                const fileLink = document.createElement('div');
+                fileLink.className = 'message-file';
+                fileLink.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path d="M19.5 7.5c-1.25 0-2.5.31-3.57.88-.85.45-1.48 1.12-1.87 1.94-.17.36-.31.75-.41 1.15a.75.75 0 0 1-1.09-.72c.16-.49.37-.96.6-1.42.34-.67.79-1.28 1.34-1.83 1.04-1.04 2.39-1.66 3.86-1.8.02-.01.04-.02.06-.02a.75.75 0 0 1 .78 1.25c-.06.05-.12.09-.18.14-.8.6-1.25 1.4-1.25 2.25v.75h.75c.85 0 1.65-.45 2.25-1.25.05-.06.09-.12.14-.18a.75.75 0 0 1 1.25.78c-.01.02-.02.04-.02.06-.14 1.47-.76 2.82-1.8 3.86-1.04 1.04-2.39 1.66-3.86 1.8-.02.01-.04.02-.06.02a.75.75 0 0 1-.78-1.25c.06-.05.12-.09.18-.14.8-.6 1.25-1.4 1.25-2.25V7.5h-.75Zm-10.5 0c-1.25 0-2.5.31-3.57.88-.85.45-1.48 1.12-1.87 1.94-.17.36-.31.75-.41 1.15a.75.75 0 0 1-1.09-.72c.16-.49.37-.96.6-1.42.34-.67.79-1.28 1.34-1.83 1.04-1.04 2.39-1.66 3.86-1.8.02-.01.04-.02.06-.02a.75.75 0 0 1 .78 1.25c-.06.05-.12.09-.18.14-.8.6-1.25 1.4-1.25 2.25v.75h.75c.85 0 1.65-.45 2.25-1.25.05-.06.09-.12.14-.18a.75.75 0 0 1 1.25.78c-.01.02-.02.04-.02.06-.14 1.47-.76 2.82-1.8 3.86-1.04 1.04-2.39 1.66-3.86 1.8-.02.01-.04.02-.06.02a.75.75 0 0 1-.78-1.25c.06-.05.12-.09.18-.14.8-.6 1.25-1.4 1.25-2.25V7.5h-.75Z" />
+                    </svg>
+                    <span>${message.fileName || 'File'}</span>
+                `;
+                fileLink.addEventListener('click', () => downloadFile(message.content, message.fileName, message.fileMimeType));
+                messageDiv.appendChild(fileLink);
+            } else {
+                const contentSpan = document.createElement('div');
+                contentSpan.className = 'message-content';
+                contentSpan.textContent = message.content;
+                messageDiv.appendChild(contentSpan);
             }
+
+            const timestampSpan = document.createElement('span');
+            timestampSpan.className = 'message-timestamp';
+            timestampSpan.textContent = new Date(message.timestamp).toLocaleTimeString();
+            messageDiv.appendChild(timestampSpan);
+
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight; // Scroll to bottom
         }
 
-        // Nuke everything
-        function nukeEverything() {
-            // Visual effects
-            document.body.style.backgroundColor = '#ff4444';
-            document.body.style.transition = 'background-color 2s';
-            
-            // Show destruction animation
-            const nukeEffect = document.createElement('div');
-            nukeEffect.style.position = 'fixed';
-            nukeEffect.style.top = '0';
-            nukeEffect.style.left = '0';
-            nukeEffect.style.width = '100%';
-            nukeEffect.style.height = '100%';
-            nukeEffect.style.background = 'radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,68,68,1) 100%)';
-            nukeEffect.style.zIndex = '2000';
-            nukeEffect.style.opacity = '0';
-            nukeEffect.style.transition = 'opacity 3s';
-            document.body.appendChild(nukeEffect);
-            
-            setTimeout(() => {
-                nukeEffect.style.opacity = '1';
-            }, 100);
-            
-            // Clear all data
-            setTimeout(() => {
-                // Clear state
-                state.vaults = { private: [], public: [] };
-                state.currentVault = null;
-                
-                // Clear UI
-                elements.vaultsContainer.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-comment-slash"></i>
-                        <h2>No Active Vaults</h2>
-                        <p>Create a new vault or join an existing one to start secure messaging.</p>
-                    </div>
-                `;
-                
-                elements.messagesContainer.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-comments"></i>
-                        <h2>Welcome to Secure Messenger</h2>
-                        <p>Create or join a vault to start sending encrypted messages. All communication is end-to-end encrypted.</p>
-                    </div>
-                `;
-                
-                document.querySelector('.chat-info h2').textContent = 'Secure Messenger';
-                document.querySelector('.expiry-info').textContent = 'No active vault selected';
-                
-                // Disable messaging
-                elements.messageInput.disabled = true;
-                elements.messageInput.placeholder = "Join a vault to start messaging...";
-                elements.sendBtn.disabled = true;
-                
-                // Generate new address
-                generateUserAddress();
-                
-                // Reset UI
-                document.body.style.backgroundColor = '';
-                document.body.removeChild(nukeEffect);
-                
-                toggleModal(elements.nukeModal);
-            }, 3000);
+        /**
+         * Renders all messages for the currently selected vault.
+         * @param {string} vaultId - The ID of the vault whose messages to render.
+         */
+        function renderChatMessages(vaultId) {
+            const chatWindow = document.getElementById('chat-window');
+            chatWindow.innerHTML = ''; // Clear previous messages
+            const vault = vaults.get(vaultId);
+            if (vault && vault.messages) {
+                vault.messages.forEach(msg => displayMessage(msg));
+            }
+            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
-        // Initialize the app when DOM is loaded
-        document.addEventListener('DOMContentLoaded', initApp);
+        /**
+         * Selects a vault and displays its chat.
+         * @param {string} vaultId - The ID of the vault to select.
+         */
+        function selectVault(vaultId) {
+            activeVaultId = vaultId;
+            sessionStorage.setItem('lastActiveVaultId', vaultId); // Remember last active vault
+            renderVaultList(); // Update active class
+            document.getElementById('no-vault-selected').classList.add('hidden');
+            document.getElementById('chat-window').classList.remove('hidden');
+            document.getElementById('chat-input-area').classList.remove('hidden');
+            renderChatMessages(vaultId);
+            document.getElementById('message-input').focus();
+        }
+
+        // --- Event Listeners and Initial Setup ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Generate or retrieve unique user ID
+            userId = sessionStorage.getItem('thePlatformUserId');
+            if (!userId) {
+                userId = crypto.randomUUID(); // Generate a new complex random ID
+                sessionStorage.setItem('thePlatformUserId', userId);
+            }
+            document.getElementById('current-user-id').textContent = userId;
+
+            initWebSocket(); // Initialize WebSocket connection
+
+            // Modals
+            const createVaultModal = document.getElementById('create-vault-modal');
+            const joinVaultModal = document.getElementById('join-vault-modal');
+            const createVaultBtn = document.getElementById('create-vault-btn');
+            const joinVaultBtn = document.getElementById('join-vault-btn');
+            const createVaultClose = document.getElementById('create-vault-close'); // Fixed typo here
+            const joinVaultClose = document.getElementById('join-vault-close');
+
+            createVaultBtn.addEventListener('click', () => {
+                createVaultModal.classList.add('show');
+                document.getElementById('create-vault-hash-display').classList.add('hidden'); // Hide hash display initially
+            });
+            joinVaultBtn.addEventListener('click', () => joinVaultModal.classList.add('show'));
+            createVaultClose.addEventListener('click', () => createVaultModal.classList.remove('show'));
+            joinVaultClose.addEventListener('click', () => joinVaultModal.classList.remove('show'));
+
+            // Create Vault Form Submission
+            document.getElementById('create-vault-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const vaultName = document.getElementById('vault-name').value;
+                const vaultType = document.getElementById('vault-type').value;
+                const expirationTime = document.getElementById('expiration-time').value;
+
+                // Generate a new AES key for the vault
+                const vaultAesKey = await generateAesKey();
+                const rawVaultAesKey = await exportKey(vaultAesKey);
+
+                // Generate a random salt for PBKDF2
+                const salt = crypto.getRandomValues(new Uint8Array(16));
+
+                // Send request to server to create vault. Server will generate hash and encrypt the vault key.
+                sendMessageToServer({
+                    type: 'create_vault',
+                    userId: userId,
+                    vaultName: vaultName,
+                    vaultType: vaultType,
+                    expiration: expirationTime,
+                    rawVaultKeyB64: btoa(String.fromCharCode(...new Uint8Array(rawVaultAesKey))), // Send raw key to server for encryption
+                    saltB64: btoa(String.fromCharCode(...salt)) // Send salt to server
+                });
+
+                // The vault_created message from server will handle adding to local vaults and UI update
+            });
+
+            // Copy Hash Button
+            document.getElementById('copy-hash-btn').addEventListener('click', () => {
+                const hash = document.getElementById('generated-vault-hash').textContent;
+                if (hash) {
+                    copyToClipboard(hash);
+                }
+            });
+
+            // Join Vault Form Submission
+            document.getElementById('join-vault-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const joinVaultHash = document.getElementById('join-vault-hash').value;
+                const joinVaultName = document.getElementById('join-vault-name').value;
+
+                sendMessageToServer({
+                    type: 'join_vault',
+                    userId: userId,
+                    vaultHash: joinVaultHash,
+                    vaultName: joinVaultName // User-given name for their reference
+                });
+                joinVaultModal.classList.remove('show');
+                document.getElementById('join-vault-form').reset();
+            });
+
+            // Send Message Button
+            document.getElementById('send-message-btn').addEventListener('click', async () => {
+                const messageInput = document.getElementById('message-input');
+                const fileInput = document.getElementById('file-input');
+                const messageText = messageInput.value.trim();
+                const file = fileInput.files[0];
+
+                if (!activeVaultId) {
+                    showMessageBox('No Vault Selected', 'Please select a vault to send messages.');
+                    return;
+                }
+
+                if (!messageText && !file) {
+                    return; // Don't send empty messages
+                }
+
+                const vault = vaults.get(activeVaultId);
+                if (!vault) {
+                    showMessageBox('Error', 'Active vault not found. Please re-select or refresh.');
+                    return;
+                }
+
+                let encryptedContent;
+                let ivB64;
+                let isFile = false;
+                let fileName = null;
+                let fileMimeType = null;
+
+                if (file) {
+                    try {
+                        const base64File = await fileToBase64(file);
+                        const { encryptedMessage, iv } = await encryptMessage(base64File, vault.key);
+                        encryptedContent = encryptedMessage;
+                        ivB64 = iv;
+                        isFile = true;
+                        fileName = file.name;
+                        fileMimeType = file.type;
+                        messageInput.value = ''; // Clear text input if file is sent
+                        fileInput.value = ''; // Clear file input
+                    } catch (error) {
+                        console.error("Error encrypting file:", error);
+                        showMessageBox('Encryption Error', 'Failed to encrypt file. Please try again.');
+                        return;
+                    }
+                } else {
+                    try {
+                        const { encryptedMessage, iv } = await encryptMessage(messageText, vault.key);
+                        encryptedContent = encryptedMessage;
+                        ivB64 = iv;
+                        messageInput.value = ''; // Clear text input
+                    } catch (error) {
+                        console.error("Error encrypting message:", error);
+                        showMessageBox('Encryption Error', 'Failed to encrypt message. Please try again.');
+                        return;
+                    }
+                }
+
+                sendMessageToServer({
+                    type: 'send_message',
+                    vaultId: activeVaultId,
+                    senderId: userId,
+                    encryptedMessage: encryptedContent,
+                    iv: ivB64,
+                    timestamp: new Date().toISOString(),
+                    isFile: isFile,
+                    fileName: fileName,
+                    fileMimeType: fileMimeType
+                });
+            });
+
+            // Attach File Button
+            document.getElementById('attach-file-btn').addEventListener('click', () => {
+                document.getElementById('file-input').click();
+            });
+
+            // Nuke Button
+            document.getElementById('nuke-btn').addEventListener('click', () => {
+                showMessageBox('Confirm Nuke', 'Are you sure you want to wipe ALL your local data and disconnect? This action cannot be undone.', () => {
+                    nukeAllData();
+                });
+            });
+
+            // Handle Enter key for sending messages
+            document.getElementById('message-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('send-message-btn').click();
+                }
+            });
+        });
     </script>
 </body>
 </html>
