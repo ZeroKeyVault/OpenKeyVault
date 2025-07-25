@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Platform</title>
-    <!-- Tailwind CSS CDN for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -329,8 +328,7 @@
                 <button id="join-vault-btn" class="input-area button">Join Vault</button>
 
                 <div class="vault-list" id="vault-list">
-                    <!-- Vault items will be injected here -->
-                </div>
+                    </div>
 
                 <button id="nuke-btn" class="nuke-button">Nuke All Data</button>
             </div>
@@ -340,8 +338,7 @@
                     Select a vault to start chatting or create/join a new one.
                 </div>
                 <div id="chat-window" class="messages-display hidden">
-                    <!-- Messages will be injected here -->
-                </div>
+                    </div>
                 <div id="chat-input-area" class="input-area hidden">
                     <input type="text" id="message-input" placeholder="Type your message...">
                     <input type="file" id="file-input" class="hidden" accept="*/*">
@@ -356,7 +353,6 @@
         </div>
     </div>
 
-    <!-- Create Vault Modal -->
     <div id="create-vault-modal" class="modal">
         <div class="modal-content">
             <span class="modal-close" id="create-vault-close">&times;</span>
@@ -392,7 +388,6 @@
         </div>
     </div>
 
-    <!-- Join Vault Modal -->
     <div id="join-vault-modal" class="modal">
         <div class="modal-content">
             <span class="modal-close" id="join-vault-close">&times;</span>
@@ -409,7 +404,6 @@
         </div>
     </div>
 
-    <!-- Message Box for alerts -->
     <div id="message-box" class="modal">
         <div class="modal-content">
             <span class="modal-close" id="message-box-close">&times;</span>
@@ -684,11 +678,13 @@
             console.warn(`Attempting to connect to WebSocket server at: ${SERVER_URL}`);
             ws = new WebSocket(SERVER_URL);
 
-            ws.onopen = async () => { // Made async to await loadVaults
+            ws.onopen = async () => {
                 console.log('WebSocket connected.');
                 // Send user ID to server upon connection
                 ws.send(JSON.stringify({ type: 'register', userId: userId }));
-                await loadVaultsFromLocalStorage(); // Ensure vaults are loaded before processing new messages
+                // Load vaults from local storage AFTER registering with the server
+                // This ensures we have our ID before trying to retrieve offline messages
+                await loadVaultsFromLocalStorage();
             };
 
             ws.onmessage = async (event) => {
@@ -783,7 +779,7 @@
                                 // Display a placeholder or error message if decryption fails
                                 const messageObj = {
                                     sender: senderId,
-                                    content: "[Decryption Failed]",
+                                    content: "[Could not decrypt message]",
                                     timestamp: timestamp,
                                     isFile: false // Assume not a file if decryption failed
                                 };
@@ -918,7 +914,7 @@
                 console.log("Vaults successfully saved to localStorage.");
             } catch (e) {
                 console.error("Error saving vaults to localStorage:", e);
-                showMessageBox('Storage Error', 'Could not save data to local storage. Your browser might be full or private browsing is enabled.');
+                showMessageBox('Storage Error', 'Could not save data to local storage. Your browser might be full or private Browse is enabled.');
             }
         }
 
@@ -953,11 +949,12 @@
                     renderVaultList();
                     // If there are vaults, select the first one by default or previously active
                     if (vaults.size > 0) {
-                        const lastActiveVaultId = sessionStorage.getItem('lastActiveVaultId');
+                        const lastActiveVaultId = localStorage.getItem('lastActiveVaultId'); // Using localStorage
                         if (lastActiveVaultId && vaults.has(lastActiveVaultId)) {
                             selectVault(lastActiveVaultId);
                         } else {
-                            selectVault(vaults.keys().next().value); // Select the first available vault
+                            // If no last active vault or it's invalid, select the first one available
+                            selectVault(vaults.keys().next().value);
                         }
                     } else {
                         console.log("No vaults found in localStorage.");
@@ -983,8 +980,8 @@
         function nukeAllData() {
             showMessageBox('Confirm Nuke', 'Are you sure you want to wipe ALL your local data and disconnect? This action cannot be undone. This will also attempt to clear your data on the server.', async () => {
                 localStorage.removeItem('thePlatformVaults');
-                sessionStorage.removeItem('thePlatformUserId');
-                sessionStorage.removeItem('lastActiveVaultId');
+                localStorage.removeItem('thePlatformUserId'); // Corrected to localStorage
+                localStorage.removeItem('lastActiveVaultId'); // Corrected to localStorage
                 vaults.clear();
                 activeVaultId = null;
                 document.getElementById('chat-window').innerHTML = '';
@@ -1107,7 +1104,7 @@
             }
 
             activeVaultId = vaultId;
-            sessionStorage.setItem('lastActiveVaultId', vaultId); // Remember last active vault
+            localStorage.setItem('lastActiveVaultId', vaultId); // Using localStorage for persistence
             renderVaultList(); // Update active class
             document.getElementById('no-vault-selected').classList.add('hidden');
             document.getElementById('chat-window').classList.remove('hidden');
@@ -1120,11 +1117,11 @@
         // --- Event Listeners and Initial Setup ---
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Generate or retrieve unique user ID
-            userId = sessionStorage.getItem('thePlatformUserId');
+            // Generate or retrieve unique user ID from localStorage
+            userId = localStorage.getItem('thePlatformUserId');
             if (!userId) {
                 userId = crypto.randomUUID(); // Generate a new complex random ID
-                sessionStorage.setItem('thePlatformUserId', userId);
+                localStorage.setItem('thePlatformUserId', userId);
                 console.log(`Generated new user ID: ${userId}`);
             } else {
                 console.log(`Loaded existing user ID: ${userId}`);
