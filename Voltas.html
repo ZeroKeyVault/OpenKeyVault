@@ -507,8 +507,9 @@
             const byteString = atob(base64.split(',')[1]);
             const ab = new ArrayBuffer(byteString.length);
             const ia = new Uint8Array(ab);
+            // FIX: Corrected from byteString.charCodeAt(0) to byteString.charCodeAt(i)
             for (let i = 0; i < byteString.length; i++) {
-                ia[i] = byteString.charCodeAt(0);
+                ia[i] = byteString.charCodeAt(i);
             }
             return new Blob([ab], { type: mimeType });
         }
@@ -1232,6 +1233,12 @@
                 let fileName = null;
                 let fileMimeType = null;
 
+                // Create the message object for local display first
+                const localMessageObj = {
+                    sender: userId, // This message is from the current user
+                    timestamp: new Date().toISOString(),
+                };
+
                 if (file) {
                     try {
                         const base64File = await fileToBase64(file);
@@ -1243,6 +1250,12 @@
                         fileMimeType = file.type;
                         messageInput.value = ''; // Clear text input if file is sent
                         fileInput.value = ''; // Clear file input
+
+                        localMessageObj.content = base64File; // Store raw content for local display
+                        localMessageObj.isFile = true;
+                        localMessageObj.fileName = fileName;
+                        localMessageObj.fileMimeType = fileMimeType;
+
                     } catch (error) {
                         console.error("Error encrypting file:", error);
                         showMessageBox('Encryption Error', 'Failed to encrypt file. Please try again.');
@@ -1254,6 +1267,9 @@
                         encryptedContent = encryptedMessage;
                         ivB64 = iv;
                         messageInput.value = ''; // Clear text input
+
+                        localMessageObj.content = messageText; // Store raw content for local display
+                        localMessageObj.isFile = false;
                     } catch (error) {
                         console.error("Error encrypting message:", error);
                         showMessageBox('Encryption Error', 'Failed to encrypt message. Please try again.');
@@ -1261,13 +1277,19 @@
                     }
                 }
 
+                // Add message to local vault and display it immediately
+                vault.messages.push(localMessageObj);
+                displayMessage(localMessageObj); // Display immediately
+                await saveVaultsToLocalStorage(); // Ensure local storage is updated
+
+                // Now send the encrypted message to the server
                 sendMessageToServer({
                     type: 'send_message',
                     vaultId: activeVaultId,
                     senderId: userId,
                     encryptedMessage: encryptedContent,
                     iv: ivB64,
-                    timestamp: new Date().toISOString(),
+                    timestamp: localMessageObj.timestamp, // Use the same timestamp
                     isFile: isFile,
                     fileName: fileName,
                     fileMimeType: fileMimeType
