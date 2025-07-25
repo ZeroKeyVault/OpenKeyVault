@@ -83,14 +83,14 @@
             display: flex;
             flex-direction: column;
             padding: 1.5rem;
-            overflow: hidden;
+            overflow: hidden; /* Ensure this doesn't create extra scrollbars */
         }
         .messages-display {
             flex-grow: 1;
             background-color: #f9f9f9;
             border-radius: 0.75rem;
             padding: 1rem;
-            overflow-y: auto;
+            overflow-y: auto; /* Make messages scrollable */
             margin-bottom: 1rem;
             border: 1px solid #e0e0e0;
         }
@@ -98,17 +98,18 @@
             margin-bottom: 0.75rem;
             padding: 0.75rem 1rem;
             border-radius: 0.75rem;
-            max-width: 80%;
-            word-wrap: break-word;
+            /* Adjusted max-width for better responsiveness */
+            max-width: calc(100% - 4rem); /* Allows some margin/padding */
+            word-wrap: break-word; /* Ensures long words break */
         }
         .message.self {
             background-color: #e0e0e0; /* Light grey for self messages */
-            margin-left: auto;
+            margin-left: auto; /* Aligns to the right */
             text-align: right;
         }
         .message.other {
             background-color: #f0f0f0; /* Even lighter grey for other messages */
-            margin-right: auto;
+            margin-right: auto; /* Aligns to the left */
             text-align: left;
         }
         .message-sender {
@@ -296,6 +297,23 @@
             .modal-content {
                 padding: 1.5rem;
             }
+            /* Adjust message max-width on very small screens if needed */
+            .message {
+                max-width: calc(100% - 2rem); /* More room for padding/margin on very small screens */
+            }
+            .message.self, .message.other {
+                margin-left: 0; /* Remove auto margins to simplify */
+                margin-right: 0;
+                width: 100%; /* Take full width */
+            }
+            .message.self {
+                text-align: right; /* Keep text alignment */
+                background-color: #e0e0e0;
+            }
+            .message.other {
+                text-align: left; /* Keep text alignment */
+                background-color: #f0f0f0;
+            }
         }
     </style>
 </head>
@@ -411,9 +429,9 @@
         let userId;
         let activeVaultId = null;
         const vaults = new Map(); // Stores vaultId -> { name, type, key, iv, messages: [] }
-        // IMPORTANT: If deploying to a secure (HTTPS) server like Render, change this to 'wss://YOUR_RENDER_APP_URL'
-        // For local development, 'ws://localhost:3000' is typically correct.
-        const SERVER_URL = 'wss://server-618i.onrender.com';
+        // IMPORTANT: Update this to your Render WebSocket URL
+        // Example: 'wss://your-app-name.onrender.com'
+        const SERVER_URL = 'wss://server-618i.onrender.com'; // **UPDATE THIS LINE WITH YOUR RENDER URL**
 
         // --- Utility Functions ---
 
@@ -490,7 +508,7 @@
             const ab = new ArrayBuffer(byteString.length);
             const ia = new Uint8Array(ab);
             for (let i = 0; i < byteString.length; i++) {
-                ia[i] = byteString.charCodeAt(i);
+                ia[i] = byteString.charCodeAt(0);
             }
             return new Blob([ab], { type: mimeType });
         }
@@ -662,14 +680,14 @@
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.close();
             }
-            console.warn(`Attempting to connect to WebSocket server at: ${SERVER_URL}`); // Use warn for visibility
+            console.warn(`Attempting to connect to WebSocket server at: ${SERVER_URL}`);
             ws = new WebSocket(SERVER_URL);
 
-            ws.onopen = () => {
+            ws.onopen = async () => { // Made async to await loadVaults
                 console.log('WebSocket connected.');
                 // Send user ID to server upon connection
                 ws.send(JSON.stringify({ type: 'register', userId: userId }));
-                loadVaultsFromLocalStorage(); // Load vaults after connection is established
+                await loadVaultsFromLocalStorage(); // Ensure vaults are loaded before processing new messages
             };
 
             ws.onmessage = async (event) => {
@@ -704,7 +722,7 @@
                             key: vaultAesKey,
                             messages: []
                         });
-                        saveVaultsToLocalStorage();
+                        await saveVaultsToLocalStorage(); // Await saving
                         renderVaultList();
                         document.getElementById('generated-vault-hash').textContent = vaultHash;
                         document.getElementById('create-vault-hash-display').classList.remove('hidden');
@@ -733,7 +751,7 @@
                             key: joinedVaultAesKey,
                             messages: []
                         });
-                        saveVaultsToLocalStorage();
+                        await saveVaultsToLocalStorage(); // Await saving
                         renderVaultList();
                         showMessageBox('Vault Joined!', `You have joined "${joinedVaultName}".`, () => {
                             selectVault(joinedVaultId);
@@ -754,7 +772,8 @@
                                     fileMimeType: fileMimeType
                                 };
                                 vault.messages.push(messageObj);
-                                saveVaultsToLocalStorage();
+                                console.log(`New message for vault ${msgVaultId}:`, messageObj);
+                                await saveVaultsToLocalStorage(); // Await saving
                                 if (activeVaultId === msgVaultId) {
                                     displayMessage(messageObj);
                                 }
@@ -768,14 +787,17 @@
                                     isFile: false // Assume not a file if decryption failed
                                 };
                                 vault.messages.push(messageObj);
-                                saveVaultsToLocalStorage();
+                                await saveVaultsToLocalStorage(); // Await saving
                                 if (activeVaultId === msgVaultId) {
                                     displayMessage(messageObj);
                                 }
                             }
+                        } else {
+                            console.warn(`Received message for unknown vault ID: ${msgVaultId}. Message:`, data);
                         }
                         break;
                     case 'offline_messages':
+                        console.log(`Received ${data.messages.length} offline messages.`);
                         for (const msg of data.messages) {
                             const { vaultId: msgVaultId, senderId, encryptedMessage, iv, timestamp, isFile, fileName, fileMimeType } = msg;
                             const vault = vaults.get(msgVaultId);
@@ -791,6 +813,7 @@
                                         fileMimeType: fileMimeType
                                     };
                                     vault.messages.push(messageObj);
+                                    console.log(`Processed offline message for vault ${msgVaultId}:`, messageObj);
                                 } catch (e) {
                                     console.error("Failed to decrypt offline message:", e);
                                     vault.messages.push({
@@ -800,11 +823,14 @@
                                         isFile: false
                                     });
                                 }
+                            } else {
+                                console.warn(`Received offline message for unknown vault ID: ${msgVaultId}. Message:`, msg);
                             }
                         }
-                        saveVaultsToLocalStorage();
-                        if (activeVaultId) {
-                            renderChatMessages(activeVaultId); // Re-render if current vault received offline messages
+                        await saveVaultsToLocalStorage(); // Await saving
+                        // Re-render chat for the active vault if new offline messages were added to it
+                        if (activeVaultId && vaults.has(activeVaultId)) {
+                            renderChatMessages(activeVaultId);
                         }
                         break;
                     case 'error':
@@ -812,30 +838,32 @@
                         break;
                     case 'vault_expired_notification':
                         const { expiredVaultId, expiredVaultName } = data;
-                        vaults.delete(expiredVaultId);
-                        saveVaultsToLocalStorage();
-                        renderVaultList();
-                        if (activeVaultId === expiredVaultId) {
-                            activeVaultId = null;
-                            document.getElementById('chat-window').classList.add('hidden');
-                            document.getElementById('chat-input-area').classList.add('hidden');
-                            document.getElementById('no-vault-selected').classList.remove('hidden');
+                        if (vaults.has(expiredVaultId)) {
+                             vaults.delete(expiredVaultId);
+                             await saveVaultsToLocalStorage(); // Await saving after deletion
+                             renderVaultList();
+                             if (activeVaultId === expiredVaultId) {
+                                 activeVaultId = null;
+                                 document.getElementById('chat-window').classList.add('hidden');
+                                 document.getElementById('chat-input-area').classList.add('hidden');
+                                 document.getElementById('no-vault-selected').classList.remove('hidden');
+                             }
+                             showMessageBox('Vault Expired', `The vault "${expiredVaultName}" has expired and all its data has been wiped.`);
+                        } else {
+                            console.log(`Received expiration for unknown or already removed vault: ${expiredVaultName} (${expiredVaultId})`);
                         }
-                        showMessageBox('Vault Expired', `The vault "${expiredVaultName}" has expired and all its data has been wiped.`);
                         break;
                 }
             };
 
             ws.onclose = () => {
                 console.log('WebSocket disconnected. Attempting to reconnect in 5 seconds...');
+                // Consider adding a visual indicator for disconnection
                 setTimeout(initWebSocket, 5000);
             };
 
             ws.onerror = (event) => {
                 console.error('WebSocket error event:', event);
-                // The 'event' object for a WebSocket 'onerror' is often a generic 'Event'
-                // and the actual network error details are typically found in the browser's console.
-                // This message aims to guide the user to common causes.
                 showMessageBox('Connection Error',
                     `Could not connect to the server at ${SERVER_URL}. ` +
                     `Please ensure:
@@ -854,6 +882,7 @@
                 ws.send(JSON.stringify(message));
             } else {
                 showMessageBox('Connection Error', 'Not connected to server. Please wait or refresh.');
+                console.warn("Attempted to send message while WebSocket is not open.", message);
             }
         }
 
@@ -865,56 +894,85 @@
          * and re-import them when loading.
          */
         async function saveVaultsToLocalStorage() {
+            console.log("Saving vaults to localStorage...");
             const serializableVaults = [];
             for (const [id, vault] of vaults.entries()) {
-                const exportedKey = await exportKey(vault.key);
-                serializableVaults.push({
-                    id: vault.id,
-                    name: vault.name,
-                    type: vault.type,
-                    expiration: vault.expiration,
-                    key: btoa(String.fromCharCode(...new Uint8Array(exportedKey))), // Base64 encode key
-                    messages: vault.messages // Messages are already serializable
-                });
+                try {
+                    const exportedKey = await exportKey(vault.key);
+                    serializableVaults.push({
+                        id: vault.id,
+                        name: vault.name,
+                        type: vault.type,
+                        expiration: vault.expiration,
+                        key: btoa(String.fromCharCode(...new Uint8Array(exportedKey))), // Base64 encode key
+                        messages: vault.messages // Messages are already serializable
+                    });
+                } catch (e) {
+                    console.error(`Failed to export key for vault ${id}:`, e);
+                    // Optionally, remove this vault from the list to be saved if its key is corrupted
+                }
             }
-            localStorage.setItem('thePlatformVaults', JSON.stringify(serializableVaults));
-            console.log("Vaults saved to localStorage.");
+            try {
+                localStorage.setItem('thePlatformVaults', JSON.stringify(serializableVaults));
+                console.log("Vaults successfully saved to localStorage.");
+            } catch (e) {
+                console.error("Error saving vaults to localStorage:", e);
+                showMessageBox('Storage Error', 'Could not save data to local storage. Your browser might be full or private browsing is enabled.');
+            }
         }
 
         /**
          * Loads vaults data from localStorage.
          */
         async function loadVaultsFromLocalStorage() {
+            console.log("Loading vaults from localStorage...");
             const storedVaults = localStorage.getItem('thePlatformVaults');
+            vaults.clear(); // Clear existing vaults before loading
             if (storedVaults) {
-                const parsedVaults = JSON.parse(storedVaults);
-                for (const serializedVault of parsedVaults) {
-                    try {
-                        const importedKey = await importKey(Uint8Array.from(atob(serializedVault.key), c => c.charCodeAt(0)));
-                        vaults.set(serializedVault.id, {
-                            id: serializedVault.id,
-                            name: serializedVault.name,
-                            type: serializedVault.type,
-                            expiration: serializedVault.expiration,
-                            key: importedKey,
-                            messages: serializedVault.messages || []
-                        });
-                    } catch (e) {
-                        console.error("Failed to load vault from localStorage:", serializedVault.id, e);
-                        // Optionally remove corrupted vault or notify user
+                try {
+                    const parsedVaults = JSON.parse(storedVaults);
+                    for (const serializedVault of parsedVaults) {
+                        try {
+                            const importedKey = await importKey(Uint8Array.from(atob(serializedVault.key), c => c.charCodeAt(0)));
+                            vaults.set(serializedVault.id, {
+                                id: serializedVault.id,
+                                name: serializedVault.name,
+                                type: serializedVault.type,
+                                expiration: serializedVault.expiration,
+                                key: importedKey,
+                                messages: serializedVault.messages || []
+                            });
+                            console.log(`Loaded vault: ${serializedVault.name} (${serializedVault.id})`);
+                        } catch (e) {
+                            console.error(`Failed to load vault ${serializedVault.id} from localStorage (key import failed):`, e);
+                            // This vault might be corrupted or key unimportable, skip it.
+                        }
                     }
-                }
-                renderVaultList();
-                // If there are vaults, select the first one by default or previously active
-                if (vaults.size > 0) {
-                    const lastActiveVaultId = sessionStorage.getItem('lastActiveVaultId');
-                    if (lastActiveVaultId && vaults.has(lastActiveVaultId)) {
-                        selectVault(lastActiveVaultId);
+                    console.log(`Finished loading ${vaults.size} vaults from localStorage.`);
+                    renderVaultList();
+                    // If there are vaults, select the first one by default or previously active
+                    if (vaults.size > 0) {
+                        const lastActiveVaultId = sessionStorage.getItem('lastActiveVaultId');
+                        if (lastActiveVaultId && vaults.has(lastActiveVaultId)) {
+                            selectVault(lastActiveVaultId);
+                        } else {
+                            selectVault(vaults.keys().next().value); // Select the first available vault
+                        }
                     } else {
-                        selectVault(vaults.keys().next().value);
+                        console.log("No vaults found in localStorage.");
+                        document.getElementById('no-vault-selected').classList.remove('hidden');
+                        document.getElementById('chat-window').classList.add('hidden');
+                        document.getElementById('chat-input-area').classList.add('hidden');
                     }
+                } catch (e) {
+                    console.error("Error parsing vaults from localStorage:", e);
+                    showMessageBox('Data Corruption', 'Local vault data is corrupted. Clearing data and starting fresh.');
+                    localStorage.removeItem('thePlatformVaults'); // Clear corrupted data
+                    // Reload the page or simply continue with empty vaults
+                    renderVaultList();
                 }
-                console.log("Vaults loaded from localStorage.");
+            } else {
+                console.log("No vaults found in localStorage initially.");
             }
         }
 
@@ -922,32 +980,33 @@
          * Clears all local data (vaults, messages, user ID).
          */
         function nukeAllData() {
-            localStorage.removeItem('thePlatformVaults');
-            sessionStorage.removeItem('thePlatformUserId');
-            sessionStorage.removeItem('lastActiveVaultId');
-            vaults.clear();
-            activeVaultId = null;
-            document.getElementById('chat-window').innerHTML = '';
-            document.getElementById('vault-list').innerHTML = '';
-            document.getElementById('chat-window').classList.add('hidden');
-            document.getElementById('chat-input-area').classList.add('hidden');
-            document.getElementById('no-vault-selected').classList.remove('hidden');
-            document.getElementById('current-user-id').textContent = 'Nuked! Reopen for new ID.';
+            showMessageBox('Confirm Nuke', 'Are you sure you want to wipe ALL your local data and disconnect? This action cannot be undone. This will also attempt to clear your data on the server.', async () => {
+                localStorage.removeItem('thePlatformVaults');
+                sessionStorage.removeItem('thePlatformUserId');
+                sessionStorage.removeItem('lastActiveVaultId');
+                vaults.clear();
+                activeVaultId = null;
+                document.getElementById('chat-window').innerHTML = '';
+                document.getElementById('vault-list').innerHTML = '';
+                document.getElementById('chat-window').classList.add('hidden');
+                document.getElementById('chat-input-area').classList.add('hidden');
+                document.getElementById('no-vault-selected').classList.remove('hidden');
+                document.getElementById('current-user-id').textContent = 'Nuked! Reopen for new ID.';
 
-            // Inform server to remove user's data
-            sendMessageToServer({ type: 'nuke', userId: userId });
+                // Inform server to remove user's data
+                sendMessageToServer({ type: 'nuke', userId: userId });
 
-            // Simulate closing the page by clearing content and displaying a message
-            document.body.innerHTML = `
-                <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-gray-700">
-                    <h1 class="text-4xl font-bold mb-4">Data Nuked!</h1>
-                    <p class="text-lg">All your local data has been wiped.</p>
-                    <p class="text-lg">To start fresh, please reopen "The Platform".</p>
-                </div>
-            `;
-            // Optionally, you could redirect to a blank page or a simple "nuked" page
-            // window.location.href = 'about:blank'; // This might not work in all iframe contexts
+                // Simulate closing the page by clearing content and displaying a message
+                document.body.innerHTML = `
+                    <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-gray-700">
+                        <h1 class="text-4xl font-bold mb-4">Data Nuked!</h1>
+                        <p class="text-lg">All your local data has been wiped.</p>
+                        <p class="text-lg">To start fresh, please reopen "The Platform".</p>
+                    </div>
+                `;
+            });
         }
+
 
         // --- UI Rendering ---
 
@@ -1023,6 +1082,8 @@
             chatWindow.innerHTML = ''; // Clear previous messages
             const vault = vaults.get(vaultId);
             if (vault && vault.messages) {
+                // Sort messages by timestamp to ensure correct order
+                vault.messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
                 vault.messages.forEach(msg => displayMessage(msg));
             }
             chatWindow.scrollTop = chatWindow.scrollHeight;
@@ -1033,6 +1094,17 @@
          * @param {string} vaultId - The ID of the vault to select.
          */
         function selectVault(vaultId) {
+            if (!vaults.has(vaultId)) {
+                console.warn(`Attempted to select non-existent vault: ${vaultId}`);
+                showMessageBox('Vault Not Found', 'This vault no longer exists locally. It might have expired or been removed.');
+                activeVaultId = null;
+                document.getElementById('no-vault-selected').classList.remove('hidden');
+                document.getElementById('chat-window').classList.add('hidden');
+                document.getElementById('chat-input-area').classList.add('hidden');
+                renderVaultList(); // Re-render to ensure no vault is marked active
+                return;
+            }
+
             activeVaultId = vaultId;
             sessionStorage.setItem('lastActiveVaultId', vaultId); // Remember last active vault
             renderVaultList(); // Update active class
@@ -1041,6 +1113,7 @@
             document.getElementById('chat-input-area').classList.remove('hidden');
             renderChatMessages(vaultId);
             document.getElementById('message-input').focus();
+            console.log(`Selected vault: ${vaults.get(vaultId).name} (${vaultId})`);
         }
 
         // --- Event Listeners and Initial Setup ---
@@ -1051,6 +1124,9 @@
             if (!userId) {
                 userId = crypto.randomUUID(); // Generate a new complex random ID
                 sessionStorage.setItem('thePlatformUserId', userId);
+                console.log(`Generated new user ID: ${userId}`);
+            } else {
+                console.log(`Loaded existing user ID: ${userId}`);
             }
             document.getElementById('current-user-id').textContent = userId;
 
@@ -1061,14 +1137,18 @@
             const joinVaultModal = document.getElementById('join-vault-modal');
             const createVaultBtn = document.getElementById('create-vault-btn');
             const joinVaultBtn = document.getElementById('join-vault-btn');
-            const createVaultClose = document.getElementById('create-vault-close'); // Fixed typo here
+            const createVaultClose = document.getElementById('create-vault-close');
             const joinVaultClose = document.getElementById('join-vault-close');
 
             createVaultBtn.addEventListener('click', () => {
                 createVaultModal.classList.add('show');
                 document.getElementById('create-vault-hash-display').classList.add('hidden'); // Hide hash display initially
+                document.getElementById('create-vault-form').reset(); // Clear form
             });
-            joinVaultBtn.addEventListener('click', () => joinVaultModal.classList.add('show'));
+            joinVaultBtn.addEventListener('click', () => {
+                joinVaultModal.classList.add('show');
+                document.getElementById('join-vault-form').reset(); // Clear form
+            });
             createVaultClose.addEventListener('click', () => createVaultModal.classList.remove('show'));
             joinVaultClose.addEventListener('click', () => joinVaultModal.classList.remove('show'));
 
@@ -1121,7 +1201,6 @@
                     vaultName: joinVaultName // User-given name for their reference
                 });
                 joinVaultModal.classList.remove('show');
-                document.getElementById('join-vault-form').reset();
             });
 
             // Send Message Button
@@ -1143,6 +1222,7 @@
                 const vault = vaults.get(activeVaultId);
                 if (!vault) {
                     showMessageBox('Error', 'Active vault not found. Please re-select or refresh.');
+                    console.error("Attempted to send message to a non-existent active vault.");
                     return;
                 }
 
@@ -1200,11 +1280,7 @@
             });
 
             // Nuke Button
-            document.getElementById('nuke-btn').addEventListener('click', () => {
-                showMessageBox('Confirm Nuke', 'Are you sure you want to wipe ALL your local data and disconnect? This action cannot be undone.', () => {
-                    nukeAllData();
-                });
-            });
+            document.getElementById('nuke-btn').addEventListener('click', nukeAllData); // Call nukeAllData directly as it has its own confirmation
 
             // Handle Enter key for sending messages
             document.getElementById('message-input').addEventListener('keypress', (e) => {
