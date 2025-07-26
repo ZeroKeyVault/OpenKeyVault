@@ -1517,7 +1517,7 @@
                             type: 'send_message',
                             vaultId: activeVaultId,
                             senderId: userId,
-                            encryptedMessage: encryptedContent,
+                            encryptedMessage: encryptedMessage, // FIX: Changed from encryptedContent to encryptedMessage
                             iv: iv,
                             timestamp: localMessageObj.timestamp,
                             isFile: false
