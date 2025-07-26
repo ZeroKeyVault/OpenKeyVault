@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Platform</title>
-    <!-- Tailwind CSS CDN for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -329,8 +328,7 @@
                 <button id="join-vault-btn" class="input-area button">Join Vault</button>
 
                 <div class="vault-list" id="vault-list">
-                    <!-- Vault items will be injected here -->
-                </div>
+                    </div>
 
                 <button id="nuke-btn" class="nuke-button">Nuke All Data</button>
             </div>
@@ -340,8 +338,7 @@
                     Select a vault to start chatting or create/join a new one.
                 </div>
                 <div id="chat-window" class="messages-display hidden">
-                    <!-- Messages will be injected here -->
-                </div>
+                    </div>
                 <div id="chat-input-area" class="input-area hidden">
                     <input type="text" id="message-input" placeholder="Type your message...">
                     <input type="file" id="file-input" class="hidden" accept="*/*">
@@ -356,7 +353,6 @@
         </div>
     </div>
 
-    <!-- Create Vault Modal -->
     <div id="create-vault-modal" class="modal">
         <div class="modal-content">
             <span class="modal-close" id="create-vault-close">&times;</span>
@@ -386,14 +382,12 @@
                 <button type="submit">Create Vault</button>
                 <div id="create-vault-hash-display" class="info-message mt-4 hidden">
                     Vault Hash: <span id="generated-vault-hash" class="font-mono break-all"></span><br>
-                    <!-- FIX: Added type="button" to prevent accidental form submission -->
                     <button id="copy-hash-btn" type="button" class="mt-2 w-auto px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm">Copy Hash</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Join Vault Modal -->
     <div id="join-vault-modal" class="modal">
         <div class="modal-content">
             <span class="modal-close" id="join-vault-close">&times;</span>
@@ -410,7 +404,6 @@
         </div>
     </div>
 
-    <!-- Message Box for alerts -->
     <div id="message-box" class="modal">
         <div class="modal-content">
             <span class="modal-close" id="message-box-close">&times;</span>
@@ -421,7 +414,6 @@
     </div>
 
     <footer class="footer">
-        <!-- New Footer Text -->
         <p>Encrypted by The Laughing Buddha Protocol</p>
         <p>a Prakhar Solanki creation</p>
         <p>&copy;2025-The Platform.</p>
@@ -436,6 +428,10 @@
         // IMPORTANT: Update this to your Render WebSocket URL
         // Example: 'wss://your-app-name.onrender.com'
         const SERVER_URL = 'wss://server-618i.onrender.com'; // **UPDATE THIS LINE WITH YOUR RENDER URL**
+
+        // For large file transfers:
+        const CHUNK_SIZE = 64 * 1024; // 64 KB chunks
+        const incomingFileChunks = new Map(); // Stores fileId -> { fileName, fileMimeType, totalChunks, receivedChunks: Map<chunkIndex, encryptedChunk>, iv, senderId, timestamp }
 
         // --- Utility Functions ---
 
@@ -765,9 +761,79 @@
                         });
                         break;
                     case 'new_message':
-                        const { vaultId: msgVaultId, senderId, encryptedMessage, iv, timestamp, isFile, fileName, fileMimeType } = data;
+                        const { vaultId: msgVaultId, senderId, encryptedMessage, iv, timestamp, isFile, fileName, fileMimeType, isChunk, fileId, chunkIndex, totalChunks } = data;
                         const vault = vaults.get(msgVaultId);
-                        if (vault) {
+
+                        if (!vault) {
+                            console.warn(`Received message for unknown vault ID: ${msgVaultId}. Message:`, data);
+                            return;
+                        }
+
+                        // Handle file chunks
+                        if (isFile && isChunk) {
+                            if (!incomingFileChunks.has(fileId)) {
+                                incomingFileChunks.set(fileId, {
+                                    fileName: fileName,
+                                    fileMimeType: fileMimeType,
+                                    totalChunks: totalChunks,
+                                    iv: iv, // IV for the whole file
+                                    senderId: senderId,
+                                    timestamp: timestamp,
+                                    receivedChunks: new Map() // Map<chunkIndex, encryptedChunk>
+                                });
+                            }
+                            const fileData = incomingFileChunks.get(fileId);
+                            fileData.receivedChunks.set(chunkIndex, encryptedMessage);
+
+                            // Check if all chunks are received
+                            if (fileData.receivedChunks.size === totalChunks) {
+                                // Reassemble the file
+                                const sortedChunks = Array.from(fileData.receivedChunks.entries())
+                                                              .sort(([idxA], [idxB]) => idxA - idxB)
+                                                              .map(([, chunk]) => chunk);
+                                const combinedEncryptedFile = sortedChunks.join(''); // Concatenate Base64 strings
+
+                                try {
+                                    const decryptedContent = await decryptMessage(combinedEncryptedFile, fileData.iv, vault.key);
+                                    const messageObj = {
+                                        sender: fileData.senderId,
+                                        content: decryptedContent,
+                                        timestamp: fileData.timestamp,
+                                        isFile: true,
+                                        fileName: fileData.fileName,
+                                        fileMimeType: fileData.fileMimeType
+                                    };
+                                    vault.messages.push(messageObj);
+                                    console.log(`Reassembled and processed file for vault ${msgVaultId}:`, messageObj);
+                                    await saveVaultsToLocalStorage();
+                                    if (activeVaultId === msgVaultId) {
+                                        displayMessage(messageObj);
+                                    }
+                                } catch (e) {
+                                    console.error("Failed to decrypt reassembled file:", e);
+                                    vault.messages.push({
+                                        sender: fileData.senderId,
+                                        content: "[Decryption Failed for File]",
+                                        timestamp: fileData.timestamp,
+                                        isFile: true,
+                                        fileName: fileData.fileName || 'unknown_file',
+                                        fileMimeType: fileData.fileMimeType || 'application/octet-stream'
+                                    });
+                                    await saveVaultsToLocalStorage();
+                                    if (activeVaultId === msgVaultId) {
+                                        displayMessage({
+                                            sender: fileData.senderId,
+                                            content: "[Decryption Failed for File]",
+                                            timestamp: fileData.timestamp,
+                                            isFile: false // Display as text error
+                                        });
+                                    }
+                                } finally {
+                                    incomingFileChunks.delete(fileId); // Clean up
+                                }
+                            }
+                        } else {
+                            // Handle regular messages
                             try {
                                 const decryptedContent = await decryptMessage(encryptedMessage, iv, vault.key);
                                 const messageObj = {
@@ -799,8 +865,6 @@
                                     displayMessage(messageObj);
                                 }
                             }
-                        } else {
-                            console.warn(`Received message for unknown vault ID: ${msgVaultId}. Message:`, data);
                         }
                         break;
                     case 'offline_messages':
@@ -924,7 +988,7 @@
                 console.log("Vaults successfully saved to localStorage.");
             } catch (e) {
                 console.error("Error saving vaults to localStorage:", e);
-                showMessageBox('Storage Error', 'Could not save data to local storage. Your browser might be full or private browsing is enabled.');
+                showMessageBox('Storage Error', 'Could not save data to local storage. Your browser might be full or private Browse is enabled.');
             }
         }
 
@@ -1234,73 +1298,104 @@
                     return;
                 }
 
-                let encryptedContent;
-                let ivB64;
-                let isFile = false;
-                let fileName = null;
-                let fileMimeType = null;
-
-                // Create the message object for local display first
-                const localMessageObj = {
-                    sender: userId, // This message is from the current user
-                    timestamp: new Date().toISOString(),
-                };
-
                 if (file) {
-                    try {
-                        const base64File = await fileToBase64(file);
-                        const { encryptedMessage, iv } = await encryptMessage(base64File, vault.key);
-                        encryptedContent = encryptedMessage;
-                        ivB64 = iv;
-                        isFile = true;
-                        fileName = file.name;
-                        fileMimeType = file.type;
-                        messageInput.value = ''; // Clear text input if file is sent
-                        fileInput.value = ''; // Clear file input
+                    // Handle file sending with chunking
+                    const fileId = crypto.randomUUID(); // Unique ID for this file transfer
+                    const fileSize = file.size;
+                    const totalChunks = Math.ceil(fileSize / CHUNK_SIZE);
+                    const timestamp = new Date().toISOString();
 
-                        localMessageObj.content = base64File; // Store raw content for local display
-                        localMessageObj.isFile = true;
-                        localMessageObj.fileName = fileName;
-                        localMessageObj.fileMimeType = fileMimeType;
+                    // Display a placeholder message immediately
+                    const localFileMessageObj = {
+                        sender: userId,
+                        content: `Sending file: ${file.name} (${(fileSize / 1024).toFixed(2)} KB)...`,
+                        timestamp: timestamp,
+                        isFile: false, // Temporarily display as text, will update once fully sent
+                        fileName: file.name,
+                        fileMimeType: file.type
+                    };
+                    vault.messages.push(localFileMessageObj);
+                    displayMessage(localFileMessageObj);
+                    await saveVaultsToLocalStorage();
 
-                    } catch (error) {
-                        console.error("Error encrypting file:", error);
-                        showMessageBox('Encryption Error', 'Failed to encrypt file. Please try again.');
-                        return;
+                    // Read and send file in chunks
+                    for (let i = 0; i < totalChunks; i++) {
+                        const start = i * CHUNK_SIZE;
+                        const end = Math.min(start + CHUNK_SIZE, fileSize);
+                        const chunk = file.slice(start, end);
+
+                        const reader = new FileReader();
+                        reader.onload = async (e) => {
+                            const chunkBase64 = e.target.result; // Data URL including mime type prefix
+                            const { encryptedMessage, iv } = await encryptMessage(chunkBase64, vault.key);
+
+                            sendMessageToServer({
+                                type: 'send_message',
+                                vaultId: activeVaultId,
+                                senderId: userId,
+                                encryptedMessage: encryptedMessage,
+                                iv: iv,
+                                timestamp: timestamp,
+                                isFile: true,
+                                isChunk: true,
+                                fileId: fileId,
+                                chunkIndex: i,
+                                totalChunks: totalChunks,
+                                fileName: file.name,
+                                fileMimeType: file.type
+                            });
+
+                            if (i === totalChunks - 1) {
+                                // Last chunk sent, update local message to actual file
+                                localFileMessageObj.content = chunkBase64; // Store raw Base64 of the *entire* file for local display
+                                localFileMessageObj.isFile = true;
+                                // Re-render the message to show as a downloadable file
+                                renderChatMessages(activeVaultId);
+                                await saveVaultsToLocalStorage();
+                                showMessageBox('File Sent', `File "${file.name}" sent successfully.`);
+                            }
+                        };
+                        reader.onerror = (error) => {
+                            console.error("Error reading file chunk:", error);
+                            showMessageBox('File Error', 'Failed to read file chunk. Please try again.');
+                        };
+                        reader.readAsDataURL(chunk); // Read as data URL to include mime type for each chunk (though overall mimeType is sent once)
                     }
+                    fileInput.value = ''; // Clear file input
+                    messageInput.value = ''; // Clear text input if file is sent
+
                 } else {
+                    // Handle regular text message
                     try {
                         const { encryptedMessage, iv } = await encryptMessage(messageText, vault.key);
-                        encryptedContent = encryptedMessage;
-                        ivB64 = iv;
-                        messageInput.value = ''; // Clear text input
+                        const timestamp = new Date().toISOString();
 
-                        localMessageObj.content = messageText; // Store raw content for local display
-                        localMessageObj.isFile = false;
+                        const localMessageObj = {
+                            sender: userId,
+                            content: messageText,
+                            timestamp: timestamp,
+                            isFile: false
+                        };
+                        vault.messages.push(localMessageObj);
+                        displayMessage(localMessageObj); // Display immediately
+                        await saveVaultsToLocalStorage(); // Ensure local storage is updated
+
+                        // Now send the encrypted message to the server
+                        sendMessageToServer({
+                            type: 'send_message',
+                            vaultId: activeVaultId,
+                            senderId: userId,
+                            encryptedMessage: encryptedMessage,
+                            iv: iv,
+                            timestamp: timestamp,
+                            isFile: false
+                        });
+                        messageInput.value = ''; // Clear text input
                     } catch (error) {
                         console.error("Error encrypting message:", error);
                         showMessageBox('Encryption Error', 'Failed to encrypt message. Please try again.');
-                        return;
                     }
                 }
-
-                // Add message to local vault and display it immediately
-                vault.messages.push(localMessageObj);
-                displayMessage(localMessageObj); // Display immediately
-                await saveVaultsToLocalStorage(); // Ensure local storage is updated
-
-                // Now send the encrypted message to the server
-                sendMessageToServer({
-                    type: 'send_message',
-                    vaultId: activeVaultId,
-                    senderId: userId,
-                    encryptedMessage: encryptedContent,
-                    iv: ivB64,
-                    timestamp: localMessageObj.timestamp, // Use the same timestamp
-                    isFile: isFile,
-                    fileName: fileName,
-                    fileMimeType: fileMimeType
-                });
             });
 
             // Attach File Button
