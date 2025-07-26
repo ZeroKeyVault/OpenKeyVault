@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Platform</title>
+    <!-- Tailwind CSS CDN for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -328,7 +329,8 @@
                 <button id="join-vault-btn" class="input-area button">Join Vault</button>
 
                 <div class="vault-list" id="vault-list">
-                    </div>
+                    <!-- Vault items will be injected here -->
+                </div>
 
                 <button id="nuke-btn" class="nuke-button">Nuke All Data</button>
             </div>
@@ -338,7 +340,8 @@
                     Select a vault to start chatting or create/join a new one.
                 </div>
                 <div id="chat-window" class="messages-display hidden">
-                    </div>
+                    <!-- Messages will be injected here -->
+                </div>
                 <div id="chat-input-area" class="input-area hidden">
                     <input type="text" id="message-input" placeholder="Type your message...">
                     <input type="file" id="file-input" class="hidden" accept="*/*">
@@ -353,6 +356,7 @@
         </div>
     </div>
 
+    <!-- Create Vault Modal -->
     <div id="create-vault-modal" class="modal">
         <div class="modal-content">
             <span class="modal-close" id="create-vault-close">&times;</span>
@@ -382,12 +386,14 @@
                 <button type="submit">Create Vault</button>
                 <div id="create-vault-hash-display" class="info-message mt-4 hidden">
                     Vault Hash: <span id="generated-vault-hash" class="font-mono break-all"></span><br>
-                    <button id="copy-hash-btn" class="mt-2 w-auto px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm">Copy Hash</button>
+                    <!-- FIX: Added type="button" to prevent accidental form submission -->
+                    <button id="copy-hash-btn" type="button" class="mt-2 w-auto px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm">Copy Hash</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Join Vault Modal -->
     <div id="join-vault-modal" class="modal">
         <div class="modal-content">
             <span class="modal-close" id="join-vault-close">&times;</span>
@@ -404,6 +410,7 @@
         </div>
     </div>
 
+    <!-- Message Box for alerts -->
     <div id="message-box" class="modal">
         <div class="modal-content">
             <span class="modal-close" id="message-box-close">&times;</span>
@@ -414,7 +421,10 @@
     </div>
 
     <footer class="footer">
-        a Prakhar Solanki creation
+        <!-- New Footer Text -->
+        <p>Encrypted by The Laughing Buddha Protocol</p>
+        <p>a Prakhar Solanki creation</p>
+        <p>&copy;2025-The Platform.</p>
     </footer>
 
     <script>
@@ -914,7 +924,7 @@
                 console.log("Vaults successfully saved to localStorage.");
             } catch (e) {
                 console.error("Error saving vaults to localStorage:", e);
-                showMessageBox('Storage Error', 'Could not save data to local storage. Your browser might be full or private Browse is enabled.');
+                showMessageBox('Storage Error', 'Could not save data to local storage. Your browser might be full or private browsing is enabled.');
             }
         }
 
@@ -949,12 +959,11 @@
                     renderVaultList();
                     // If there are vaults, select the first one by default or previously active
                     if (vaults.size > 0) {
-                        const lastActiveVaultId = localStorage.getItem('lastActiveVaultId'); // Using localStorage
+                        const lastActiveVaultId = localStorage.getItem('lastActiveVaultId');
                         if (lastActiveVaultId && vaults.has(lastActiveVaultId)) {
                             selectVault(lastActiveVaultId);
                         } else {
-                            // If no last active vault or it's invalid, select the first one available
-                            selectVault(vaults.keys().next().value);
+                            selectVault(vaults.keys().next().value); // Select the first available vault
                         }
                     } else {
                         console.log("No vaults found in localStorage.");
@@ -980,8 +989,8 @@
         function nukeAllData() {
             showMessageBox('Confirm Nuke', 'Are you sure you want to wipe ALL your local data and disconnect? This action cannot be undone. This will also attempt to clear your data on the server.', async () => {
                 localStorage.removeItem('thePlatformVaults');
-                localStorage.removeItem('thePlatformUserId'); // Corrected to localStorage
-                localStorage.removeItem('lastActiveVaultId'); // Corrected to localStorage
+                localStorage.removeItem('thePlatformUserId');
+                localStorage.removeItem('lastActiveVaultId');
                 vaults.clear();
                 activeVaultId = null;
                 document.getElementById('chat-window').innerHTML = '';
@@ -1179,6 +1188,7 @@
             });
 
             // Copy Hash Button
+            // FIX: Added type="button" to prevent accidental form submission
             document.getElementById('copy-hash-btn').addEventListener('click', () => {
                 const hash = document.getElementById('generated-vault-hash').textContent;
                 if (hash) {
