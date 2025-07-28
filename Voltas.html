@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Platform</title>
+    <!-- Tailwind CSS CDN for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -32,9 +33,7 @@
             background-color: #f9f9f9; /* Slightly off-white for header */
             padding: 1.5rem;
             border-bottom: 1px solid #e0e0e0;
-            display: flex; /* Use flexbox for alignment */
-            justify-content: center; /* Center content horizontally */
-            align-items: center; /* Center content vertically */
+            text-align: center;
             font-size: 2.5rem;
             font-weight: 700;
             color: #333;
@@ -320,10 +319,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <span>The Platform</span>
-            <img src="http://googleusercontent.com/file_content/2" alt="Logo" class="w-12 h-12 ml-4 rounded-full object-cover">
-        </div>
+        <div class="header">The Platform</div>
         <div class="main-content">
             <div class="sidebar">
                 <div class="info-message" id="user-id-display">
@@ -333,7 +329,8 @@
                 <button id="join-vault-btn" class="input-area button">Join Vault</button>
 
                 <div class="vault-list" id="vault-list">
-                    </div>
+                    <!-- Vault items will be injected here -->
+                </div>
 
                 <button id="nuke-btn" class="nuke-button">Nuke All Data</button>
             </div>
@@ -343,7 +340,8 @@
                     Select a vault to start chatting or create/join a new one.
                 </div>
                 <div id="chat-window" class="messages-display hidden">
-                    </div>
+                    <!-- Messages will be injected here -->
+                </div>
                 <div id="chat-input-area" class="input-area hidden">
                     <input type="text" id="message-input" placeholder="Type your message...">
                     <input type="file" id="file-input" class="hidden" accept="*/*">
@@ -358,6 +356,7 @@
         </div>
     </div>
 
+    <!-- Create Vault Modal -->
     <div id="create-vault-modal" class="modal">
         <div class="modal-content">
             <span class="modal-close" id="create-vault-close">&times;</span>
@@ -387,12 +386,14 @@
                 <button type="submit">Create Vault</button>
                 <div id="create-vault-hash-display" class="info-message mt-4 hidden">
                     Vault Hash: <span id="generated-vault-hash" class="font-mono break-all"></span><br>
+                    <!-- FIX: Added type="button" to prevent accidental form submission -->
                     <button id="copy-hash-btn" type="button" class="mt-2 w-auto px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm">Copy Hash</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Join Vault Modal -->
     <div id="join-vault-modal" class="modal">
         <div class="modal-content">
             <span class="modal-close" id="join-vault-close">&times;</span>
@@ -409,6 +410,7 @@
         </div>
     </div>
 
+    <!-- Message Box for alerts -->
     <div id="message-box" class="modal">
         <div class="modal-content">
             <span class="modal-close" id="message-box-close">&times;</span>
@@ -419,6 +421,7 @@
     </div>
 
     <footer class="footer">
+        <!-- New Footer Text -->
         <p>Encrypted by The Laughing Buddha Protocol</p>
         <p>a Prakhar Solanki creation</p>
         <p>&copy;2025-The Platform.</p>
@@ -429,32 +432,10 @@
         let ws;
         let userId;
         let activeVaultId = null;
-        // Stores vaultId -> { name, type, key, iv, messages: [], participants: [] }
-        const vaults = new Map();
+        const vaults = new Map(); // Stores vaultId -> { name, type, key, iv, messages: [] }
         // IMPORTANT: Update this to your Render WebSocket URL
         // Example: 'wss://your-app-name.onrender.com'
-        const SERVER_URL = 'wss://server-2-j3cv.onrender.com'; // **UPDATE THIS LINE WITH YOUR RENDER URL**
-
-        // For large file transfers:
-        const CHUNK_SIZE = 64 * 1024; // 64 KB chunks
-        // Stores fileId -> { fileName, fileMimeType, totalChunks, iv, senderId, timestamp, receivedChunks: Map<chunkIndex, encryptedChunk>, placeholderMessageElement }
-        const incomingFileChunks = new Map();
-
-        // For Peer-to-Peer (WebRTC)
-        const STUN_SERVERS = [
-            'stun:stun.l.google.com:19302',
-            'stun:stun1.l.google.com:19302',
-            'stun:stun2.l.google.com:19302',
-            'stun:stun3.l.google.com:19302',
-            'stun:stun4.l.google.com:19302'
-            // Add TURN servers here for more robust NAT traversal in production
-            // { urls: 'turn:YOUR_TURN_SERVER_IP:PORT', username: 'YOUR_USERNAME', credential: 'YOUR_PASSWORD' }
-        ];
-        const peerConnections = new Map(); // userId -> RTCPeerConnection
-        const dataChannels = new Map();    // userId -> RTCDataChannel
-        const pendingIceCandidates = new Map(); // userId -> [] of candidates
-        const pendingOffers = new Map(); // userId -> {offer, timestamp} to retry if PC not ready
-        const p2pChannelLabels = new Set(); // To track opened data channel labels for clean up
+        const SERVER_URL = 'wss://server-618i.onrender.com'; // **UPDATE THIS LINE WITH YOUR RENDER URL**
 
         // --- Utility Functions ---
 
@@ -467,7 +448,7 @@
         function showMessageBox(title, message, onOk = () => {}) {
             const msgBox = document.getElementById('message-box');
             document.getElementById('message-box-title').textContent = title;
-            document.getElementById('message-box-content').innerHTML = message; // Use innerHTML for potential HTML in message
+            document.getElementById('message-box-content').textContent = message;
             msgBox.classList.add('show');
 
             const okBtn = document.getElementById('message-box-ok');
@@ -507,14 +488,14 @@
         }
 
         /**
-         * Converts a File object to a Base64 string (Data URL).
+         * Converts a File object to a Base64 string.
          * @param {File} file - The file to convert.
-         * @returns {Promise<string>} A promise that resolves with the Base64 string (Data URL).
+         * @returns {Promise<string>} A promise that resolves with the Base64 string.
          */
         function fileToBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = () => resolve(reader.result); // e.g., "data:image/png;base64,iVBORw..."
+                reader.onload = () => resolve(reader.result);
                 reader.onerror = error => reject(error);
                 reader.readAsDataURL(file);
             });
@@ -527,11 +508,10 @@
          * @returns {Blob} The Blob object.
          */
         function base64ToBlob(base64, mimeType) {
-            // Ensure base64 string does not contain the data URL prefix
-            const cleanBase64 = base64.startsWith('data:') ? base64.split(',')[1] : base64;
-            const byteString = atob(cleanBase64);
+            const byteString = atob(base64.split(',')[1]);
             const ab = new ArrayBuffer(byteString.length);
             const ia = new Uint8Array(ab);
+            // FIX: Corrected from byteString.charCodeAt(0) to byteString.charCodeAt(i)
             for (let i = 0; i < byteString.length; i++) {
                 ia[i] = byteString.charCodeAt(i);
             }
@@ -540,12 +520,12 @@
 
         /**
          * Downloads a file from Base64 data.
-         * @param {string} base64Data - The Base64 encoded file data (full Data URL).
+         * @param {string} base64Data - The Base64 encoded file data.
          * @param {string} filename - The name of the file to download.
          * @param {string} mimeType - The MIME type of the file.
          */
         function downloadFile(base64Data, filename, mimeType) {
-            const blob = base64ToBlob(base64Data, mimeType); // base64ToBlob now handles prefix
+            const blob = base64ToBlob(base64Data, mimeType);
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -662,7 +642,7 @@
 
         /**
          * Encrypts a string message.
-         * @param {string} message - The message string (can be raw Base64 for files).
+         * @param {string} message - The message string.
          * @param {CryptoKey} key - The AES-GCM key for the vault.
          * @returns {Promise<{encryptedMessage: string, iv: string}>} Base64 encoded encrypted message and IV.
          */
@@ -681,7 +661,7 @@
          * @param {string} encryptedMessageB64 - Base64 encoded encrypted message.
          * @param {string} ivB64 - Base64 encoded IV.
          * @param {CryptoKey} key - The AES-GCM key for the vault.
-         * @returns {Promise<string>} The decrypted message string (can be raw Base64 for files).
+         * @returns {Promise<string>} The decrypted message string.
          */
         async function decryptMessage(encryptedMessageB64, ivB64, key) {
             try {
@@ -696,896 +676,367 @@
             }
         }
 
-        // --- WebRTC (Peer-to-Peer) Functions ---
-
-        /**
-         * Sends a WebRTC signaling message via the WebSocket server.
-         * @param {string} toUserId - The recipient of the signal.
-         * @param {object} signalData - The WebRTC offer, answer, or ICE candidate.
-         */
-        function sendWebRTCSignal(toUserId, signalData) {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'webrtc_signal',
-                    fromUserId: userId,
-                    toUserId: toUserId,
-                    signalData: signalData
-                }));
-            } else {
-                console.warn("WebSocket not open, cannot send WebRTC signal. Signal for", toUserId, signalData);
-            }
-        }
-
-        /**
-         * Sets up a new RTCPeerConnection and data channel for a target user.
-         * @param {string} targetUserId - The ID of the peer to connect to.
-         * @param {string} vaultId - The ID of the vault this P2P connection is for.
-         * @param {boolean} isInitiator - True if this client should create the offer.
-         */
-        async function setupPeerConnection(targetUserId, vaultId, isInitiator) {
-            if (peerConnections.has(targetUserId)) {
-                const existingPc = peerConnections.get(targetUserId);
-                if (existingPc.iceConnectionState === 'connected' || existingPc.iceConnectionState === 'checking') {
-                    console.log(`P2P connection already exists and is active for ${targetUserId}.`);
-                    return;
-                }
-                // If existing connection is not active, close and re-initialize
-                console.log(`P2P connection for ${targetUserId} in state ${existingPc.iceConnectionState}. Re-initializing.`);
-                existingPc.close(); // Clean up existing PC
-                dataChannels.delete(targetUserId);
-                peerConnections.delete(targetUserId);
-            }
-
-            console.log(`Setting up P2P connection for ${targetUserId} in vault ${vaultId}. Initiator: ${isInitiator}`);
-            const pc = new RTCPeerConnection({
-                iceServers: [{ urls: STUN_SERVERS }]
-            });
-            peerConnections.set(targetUserId, pc);
-
-            // Handle ICE candidates
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    // console.log(`Sending ICE candidate to ${targetUserId}`);
-                    sendWebRTCSignal(targetUserId, { type: 'candidate', candidate: event.candidate, vaultId: vaultId });
-                }
-            };
-
-            // Handle ICE connection state changes (for debugging)
-            pc.oniceconnectionstatechange = () => {
-                console.log(`ICE connection state for ${targetUserId}: ${pc.iceConnectionState}`);
-                if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'closed') {
-                    console.warn(`P2P connection to ${targetUserId} failed, disconnected, or closed. Removing DataChannel.`);
-                    dataChannels.delete(targetUserId); // Remove data channel if connection fails
-                    peerConnections.delete(targetUserId); // Also remove PC
-                    p2pChannelLabels.delete(`chat-${vaultId}-${targetUserId}`); // Clean up label
-                    showMessageBox('P2P Disconnected', `Direct connection to ${targetUserId.substring(0,8)}... for vault "${vaults.get(vaultId)?.name}" lost. Messages will now go via server.`);
-                } else if (pc.iceConnectionState === 'connected') {
-                    showMessageBox('P2P Connected!', `Direct connection established with ${targetUserId.substring(0,8)}... for vault "${vaults.get(vaultId)?.name}".`);
-                }
-            };
-
-            // Handle incoming data channels (for the non-initiator)
-            pc.ondatachannel = (event) => {
-                const dc = event.channel;
-                const expectedLabel = `chat-${vaultId}-${targetUserId}`; // Ensure correct label
-                if (dc.label === expectedLabel && !dataChannels.has(targetUserId)) {
-                    console.log(`Incoming DataChannel from ${targetUserId}: ${dc.label}`);
-                    dataChannels.set(targetUserId, dc);
-                    p2pChannelLabels.add(dc.label);
-                    setupDataChannelListeners(dc, targetUserId, vaultId);
-                } else if (dc.label !== expectedLabel) {
-                    console.warn("Received data channel with unexpected label:", dc.label, ". Expected:", expectedLabel);
-                } else {
-                    console.warn(`DataChannel for ${targetUserId} already exists or is being processed.`);
-                }
-            };
-
-            if (isInitiator) {
-                // Create data channel (for the initiator)
-                const dataChannelLabel = `chat-${vaultId}-${userId}`; // Unique label for the data channel. Use current user ID for initiator's label.
-                if (!p2pChannelLabels.has(dataChannelLabel)) {
-                    const dc = pc.createDataChannel(dataChannelLabel);
-                    dataChannels.set(targetUserId, dc);
-                    p2pChannelLabels.add(dataChannelLabel);
-                    setupDataChannelListeners(dc, targetUserId, vaultId);
-                    console.log(`Created DataChannel for ${targetUserId}: ${dc.label}`);
-                } else {
-                    console.warn(`DataChannel with label ${dataChannelLabel} already created. Skipping.`);
-                }
-
-                // Create offer
-                pc.onnegotiationneeded = async () => {
-                    try {
-                        const offer = await pc.createOffer();
-                        await pc.setLocalDescription(offer);
-                        console.log(`Sending WebRTC offer to ${targetUserId}`);
-                        sendWebRTCSignal(targetUserId, { type: 'offer', sdp: pc.localDescription, vaultId: vaultId });
-                    } catch (e) {
-                        console.error("Error creating or sending offer:", e);
-                    }
-                };
-            }
-
-            // Add any pending ICE candidates if they arrived before PC was ready
-            if (pendingIceCandidates.has(targetUserId)) {
-                for (const candidate of pendingIceCandidates.get(targetUserId)) {
-                    try {
-                        await pc.addIceCandidate(new RTCIceCandidate(candidate));
-                    } catch (e) {
-                        console.warn("Error adding pending ICE candidate:", e);
-                    }
-                }
-                pendingIceCandidates.delete(targetUserId);
-            }
-        }
-
-        /**
-         * Sets up listeners for an RTCDataChannel.
-         * @param {RTCDataChannel} dc - The data channel.
-         * @param {string} peerId - The ID of the peer.
-         * @param {string} vaultId - The vault ID associated with this channel.
-         */
-        function setupDataChannelListeners(dc, peerId, vaultId) {
-            dc.onopen = () => {
-                console.log(`DataChannel to ${peerId} in vault ${vaultId} is OPEN.`);
-            };
-
-            dc.onmessage = async (event) => {
-                let data;
-                try {
-                    data = JSON.parse(event.data);
-                } catch (e) {
-                    console.error("Failed to parse incoming P2P message:", e, event.data);
-                    return;
-                }
-                console.log(`Received P2P message from ${peerId}:`, data);
-
-                // Process P2P chat messages (similar to new_message from server)
-                if (data.type === 'chat_message' || data.type === 'file_chunk') {
-                    const { senderId, encryptedMessage, iv, timestamp, isFile, fileName, fileMimeType, fileId, chunkIndex, totalChunks } = data;
-                    const vault = vaults.get(vaultId);
-
-                    if (!vault) {
-                        console.warn(`Received P2P message for unknown vault ID: ${vaultId}. Message:`, data);
-                        return;
-                    }
-
-                    const isIncomingFilePart = (fileId !== undefined && chunkIndex !== undefined && totalChunks !== undefined);
-
-                    if (isIncomingFilePart) {
-                        if (!incomingFileChunks.has(fileId)) {
-                            incomingFileChunks.set(fileId, {
-                                fileName: fileName,
-                                fileMimeType: fileMimeType,
-                                totalChunks: totalChunks,
-                                iv: iv, // IV for the whole file
-                                senderId: senderId,
-                                timestamp: timestamp,
-                                receivedChunks: new Map(),
-                                placeholderMessageElement: null
-                            });
-
-                            if (activeVaultId === vaultId) {
-                                const chatWindow = document.getElementById('chat-window');
-                                const placeholderDiv = document.createElement('div');
-                                placeholderDiv.className = `message other`;
-                                placeholderDiv.innerHTML = `
-                                    <div class="message-sender">User: ${senderId.substring(0, 8)}...</div>
-                                    <div class="message-content">Receiving file: ${fileName || 'unknown'} (0/${totalChunks} chunks received) via P2P...</div>
-                                    <span class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</span>
-                                `;
-                                chatWindow.appendChild(placeholderDiv);
-                                chatWindow.scrollTop = chatWindow.scrollHeight;
-                                incomingFileChunks.get(fileId).placeholderMessageElement = placeholderDiv;
-                            }
-                        }
-
-                        const fileData = incomingFileChunks.get(fileId);
-                        fileData.receivedChunks.set(chunkIndex, encryptedMessage);
-
-                        if (activeVaultId === vaultId && fileData.placeholderMessageElement) {
-                            const contentSpan = fileData.placeholderMessageElement.querySelector('.message-content');
-                            if (contentSpan) {
-                                contentSpan.textContent = `Receiving file: ${fileName || 'unknown'} (${fileData.receivedChunks.size}/${totalChunks} chunks received) via P2P`;
-                            }
-                            document.getElementById('chat-window').scrollTop = document.getElementById('chat-window').scrollHeight;
-                        }
-
-                        if (fileData.receivedChunks.size === totalChunks) {
-                            const sortedChunks = Array.from(fileData.receivedChunks.entries())
-                                                          .sort(([idxA], [idxB]) => idxA - idxB)
-                                                          .map(([, chunk]) => chunk);
-                            const combinedEncryptedRawBase64 = sortedChunks.join('');
-
-                            try {
-                                const decryptedContent = await decryptMessage(combinedEncryptedRawBase64, fileData.iv, vault.key);
-
-                                const messageObj = {
-                                    id: crypto.randomUUID(), // New ID for the reassembled message
-                                    senderId: senderId,
-                                    content: decryptedContent,
-                                    timestamp: fileData.timestamp,
-                                    isFile: true,
-                                    fileName: fileData.fileName,
-                                    fileMimeType: fileData.fileMimeType,
-                                    deliveryMethod: 'P2P' // Indicate P2P delivery
-                                };
-
-                                vault.messages.push(messageObj);
-                                if (activeVaultId === vaultId) {
-                                    if (fileData.placeholderMessageElement) {
-                                        fileData.placeholderMessageElement.remove(); // Remove placeholder
-                                    }
-                                    displayMessage(messageObj);
-                                }
-                                showMessageBox('File Received!', `File "${fileData.fileName}" received via P2P in vault "${vault.name}".`);
-                                incomingFileChunks.delete(fileId); // Clean up
-                            } catch (e) {
-                                console.error("Error decrypting/reassembling P2P file:", e);
-                                const errorMsg = {
-                                    id: crypto.randomUUID(),
-                                    senderId: senderId,
-                                    content: `[Error receiving file "${fileName || 'unknown'}" via P2P: ${e.message}]`,
-                                    timestamp: timestamp,
-                                    isFile: false,
-                                    deliveryMethod: 'P2P'
-                                };
-                                vault.messages.push(errorMsg);
-                                if (activeVaultId === vaultId) {
-                                    if (fileData.placeholderMessageElement) {
-                                        fileData.placeholderMessageElement.remove();
-                                    }
-                                    displayMessage(errorMsg);
-                                }
-                                incomingFileChunks.delete(fileId);
-                            }
-                        }
-                    } else { // Regular P2P text message
-                        decryptAndDisplayMessage(
-                            vaultId,
-                            senderId,
-                            encryptedMessage,
-                            iv,
-                            timestamp,
-                            false, // isFile
-                            null, null, // fileName, fileMimeType
-                            'P2P' // deliveryMethod
-                        );
-                    }
-                }
-            };
-
-            dc.onclose = () => {
-                console.log(`DataChannel to ${peerId} is CLOSED.`);
-                dataChannels.delete(peerId);
-                p2pChannelLabels.delete(dc.label); // Clean up label
-                // No need to show MessageBox here, oniceconnectionstatechange handles connection state changes.
-            };
-
-            dc.onerror = (error) => {
-                console.error(`DataChannel error with ${peerId}:`, error);
-            };
-        }
-
-        /**
-         * Handles incoming WebRTC signaling messages from the WebSocket server.
-         * @param {object} data - The signaling data.
-         */
-        async function handleWebRTCSignal(data) {
-            const { fromUserId, signalData, vaultId } = data;
-            console.log(`Received WebRTC signal from ${fromUserId}:`, signalData.type, 'for vault:', vaultId);
-
-            let pc = peerConnections.get(fromUserId);
-            // If PC doesn't exist yet, it means this client is the non-initiator
-            // or the initiator hasn't yet created the PC.
-            // For offers, create PC and set remote description.
-            // For candidates, store them until PC is ready.
-            if (!pc && signalData.type === 'offer') {
-                await setupPeerConnection(fromUserId, vaultId, false); // Create PC as non-initiator
-                pc = peerConnections.get(fromUserId); // Get the newly created PC
-                if (!pc) {
-                    console.error("Failed to create PeerConnection for incoming offer.");
-                    return;
-                }
-            } else if (!pc && signalData.type === 'candidate') {
-                // If candidate arrives before offer, store it.
-                if (!pendingIceCandidates.has(fromUserId)) {
-                    pendingIceCandidates.set(fromUserId, []);
-                }
-                pendingIceCandidates.get(fromUserId).push(signalData.candidate);
-                console.log(`Storing pending ICE candidate from ${fromUserId}.`);
-                return; // Don't process further until PC is ready from offer
-            } else if (!pc) {
-                 console.warn(`Received signal of type ${signalData.type} from ${fromUserId} but no PC exists. Ignoring.`);
-                 return;
-            }
-
-
-            try {
-                if (signalData.type === 'offer') {
-                    await pc.setRemoteDescription(new RTCSessionDescription(signalData.sdp));
-                    // Check if there are pending ICE candidates for this peer.
-                    // Add them *after* setting the remote description.
-                    if (pendingIceCandidates.has(fromUserId)) {
-                        for (const candidate of pendingIceCandidates.get(fromUserId)) {
-                            try {
-                                await pc.addIceCandidate(new RTCIceCandidate(candidate));
-                            } catch (e) {
-                                console.warn("Error adding pending ICE candidate during offer processing:", e);
-                            }
-                        }
-                        pendingIceCandidates.delete(fromUserId);
-                    }
-                    const answer = await pc.createAnswer();
-                    await pc.setLocalDescription(answer);
-                    console.log(`Sending WebRTC answer to ${fromUserId}`);
-                    sendWebRTCSignal(fromUserId, { type: 'answer', sdp: pc.localDescription, vaultId: vaultId });
-                } else if (signalData.type === 'answer') {
-                    await pc.setRemoteDescription(new RTCSessionDescription(signalData.sdp));
-                    console.log(`Set remote description (answer) for ${fromUserId}`);
-                } else if (signalData.type === 'candidate') {
-                    if (pc.remoteDescription && pc.remoteDescription.type) { // Ensure remote description is set
-                        await pc.addIceCandidate(new RTCIceCandidate(signalData.candidate));
-                        console.log(`Added ICE candidate from ${fromUserId}`);
-                    } else {
-                        // If remote description isn't set yet, queue the candidate
-                        if (!pendingIceCandidates.has(fromUserId)) {
-                            pendingIceCandidates.set(fromUserId, []);
-                        }
-                        pendingIceCandidates.get(fromUserId).push(signalData.candidate);
-                        console.log(`Queued ICE candidate from ${fromUserId} as remote description not yet set.`);
-                    }
-                }
-            } catch (e) {
-                console.error("Error handling WebRTC signal:", e);
-            }
-        }
-
-
         // --- WebSocket Communication ---
 
         /**
          * Initializes the WebSocket connection.
          */
         function initWebSocket() {
-            if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
-                console.log("WebSocket is already open or connecting.");
-                return;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
             }
-
+            console.warn(`Attempting to connect to WebSocket server at: ${SERVER_URL}`);
             ws = new WebSocket(SERVER_URL);
 
-            ws.onopen = () => {
-                console.log('Connected to WebSocket server');
-                // Retrieve or generate userId from localStorage
-                userId = localStorage.getItem('userId');
-                if (!userId) {
-                    userId = crypto.randomUUID();
-                    localStorage.setItem('userId', userId);
-                    console.log('Generated new userId:', userId);
-                }
-                document.getElementById('current-user-id').textContent = userId.substring(0, 8) + '...';
+            ws.onopen = async () => {
+                console.log('WebSocket connected.');
+                // Send user ID to server upon connection
                 ws.send(JSON.stringify({ type: 'register', userId: userId }));
-
-                // Re-register all known vaults upon reconnection
-                vaults.forEach(vault => {
-                    const saltB64 = btoa(String.fromCharCode(...vault.salt));
-                    ws.send(JSON.stringify({
-                        type: 'reconnect_vault',
-                        vaultId: vault.id,
-                        userId: userId,
-                        vaultHash: vault.vaultHash, // Re-send the vault hash
-                        encryptedAesKeyB64: vault.encryptedAesKeyB64,
-                        saltB64: saltB64,
-                        participants: vault.participants // Send participants array for P2P awareness
-                    }));
-                });
+                // Load vaults from local storage AFTER registering with the server
+                // This ensures we have our ID before trying to retrieve offline messages
+                await loadVaultsFromLocalStorage();
             };
 
             ws.onmessage = async (event) => {
-                const message = JSON.parse(event.data);
-                // console.log('Received message:', message);
+                let data;
+                try {
+                    data = JSON.parse(event.data);
+                } catch (e) {
+                    console.error("Failed to parse incoming WebSocket message:", e, event.data);
+                    showMessageBox('Data Error', 'Received malformed data from server.');
+                    return;
+                }
+                console.log('Received:', data);
 
-                switch (message.type) {
-                    case 'error':
-                        showMessageBox('Error', message.message);
-                        break;
+                switch (data.type) {
                     case 'vault_created':
-                        // Store the vault hash for the user to copy
-                        const createVaultHashDisplay = document.getElementById('create-vault-hash-display');
-                        const generatedVaultHashSpan = document.getElementById('generated-vault-hash');
-                        generatedVaultHashSpan.textContent = message.vaultHash;
-                        createVaultHashDisplay.classList.remove('hidden');
-
-                        // Import the AES key and store vault data
-                        const saltBytes = Uint8Array.from(atob(message.saltB64), c => c.charCodeAt(0));
-                        const derivedKey = await deriveKeyFromHash(message.vaultHash, saltBytes);
-                        const decryptedAesKeyBytes = await decryptData(
-                            Uint8Array.from(atob(message.encryptedAesKeyB64), c => c.charCodeAt(0)),
-                            Uint8Array.from(atob(message.ivB64), c => c.charCodeAt(0)),
-                            derivedKey
+                        // Server sends back the hash and encrypted key for the creator
+                        const { vaultId, vaultHash, vaultName, vaultType, expiration, encryptedKeyB64, ivB64, saltB64 } = data;
+                        const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+                        const derivedKeyForVaultKey = await deriveKeyFromHash(vaultHash, salt);
+                        const decryptedVaultKeyRaw = await decryptData(
+                            Uint8Array.from(atob(encryptedKeyB64), c => c.charCodeAt(0)),
+                            Uint8Array.from(atob(ivB64), c => c.charCodeAt(0)),
+                            derivedKeyForVaultKey
                         );
-                        const aesKey = await importKey(decryptedAesKeyBytes);
+                        const vaultAesKey = await importKey(decryptedVaultKeyRaw);
 
-                        const newVault = {
-                            id: message.vaultId,
-                            name: message.vaultName,
-                            type: message.vaultType,
-                            key: aesKey,
-                            iv: Uint8Array.from(atob(message.ivB64), c => c.charCodeAt(0)), // Store IV too
-                            vaultHash: message.vaultHash,
-                            encryptedAesKeyB64: message.encryptedAesKeyB64, // Stored for reconnection
-                            salt: saltBytes,
-                            expiration: message.expiration,
-                            messages: [],
-                            participants: message.participants || [] // Store participants
-                        };
-                        vaults.set(message.vaultId, newVault);
-                        addVaultToSidebar(newVault);
-                        await saveVaultsToLocalStorage();
-                        showMessageBox('Vault Created!', `Vault "${message.vaultName}" created. Share this hash with others: <span class="font-mono break-all text-sm">${message.vaultHash}</span>`, () => {
-                             selectVault(message.vaultId);
-                             document.getElementById('create-vault-modal').classList.remove('show');
+                        vaults.set(vaultId, {
+                            id: vaultId,
+                            name: vaultName,
+                            type: vaultType,
+                            expiration: expiration,
+                            key: vaultAesKey,
+                            messages: []
+                        });
+                        await saveVaultsToLocalStorage(); // Await saving
+                        renderVaultList();
+                        document.getElementById('generated-vault-hash').textContent = vaultHash;
+                        document.getElementById('create-vault-hash-display').classList.remove('hidden');
+                        showMessageBox('Vault Created!', `Your vault "${vaultName}" has been created. Share this hash: ${vaultHash}`, () => {
+                            // Automatically select the new vault after creation
+                            selectVault(vaultId);
                         });
                         break;
                     case 'vault_joined':
-                        // If vault already exists locally, update it. Otherwise, add it.
-                        let vault = vaults.get(message.vaultId);
-                        if (!vault) {
-                            const saltBytes = Uint8Array.from(atob(message.saltB64), c => c.charCodeAt(0));
-                            const derivedKey = await deriveKeyFromHash(message.vaultHash, saltBytes);
-                            const decryptedAesKeyBytes = await decryptData(
-                                Uint8Array.from(atob(message.encryptedAesKeyB64), c => c.charCodeAt(0)),
-                                Uint8Array.from(atob(message.ivB64), c => c.charCodeAt(0)),
-                                derivedKey
-                            );
-                            const aesKey = await importKey(decryptedAesKeyBytes);
+                        // Server sends back the encrypted key for the joiner
+                        const { joinedVaultId, joinedVaultName, joinedVaultType, joinedExpiration, encryptedKeyB64: joinedEncryptedKeyB64, ivB64: joinedIvB64, saltB64: joinedSaltB64, vaultHash: joinHashUsed } = data;
+                        const joinSalt = Uint8Array.from(atob(joinedSaltB64), c => c.charCodeAt(0));
+                        const derivedKeyForJoinedVaultKey = await deriveKeyFromHash(joinHashUsed, joinSalt);
+                        const decryptedJoinedVaultKeyRaw = await decryptData(
+                            Uint8Array.from(atob(joinedEncryptedKeyB64), c => c.charCodeAt(0)),
+                            Uint8Array.from(atob(joinedIvB64), c => c.charCodeAt(0)),
+                            derivedKeyForJoinedVaultKey
+                        );
+                        const joinedVaultAesKey = await importKey(decryptedJoinedVaultKeyRaw);
 
-                            vault = {
-                                id: message.vaultId,
-                                name: message.vaultName,
-                                type: message.vaultType,
-                                key: aesKey,
-                                iv: Uint8Array.from(atob(message.ivB64), c => c.charCodeAt(0)),
-                                vaultHash: message.vaultHash,
-                                encryptedAesKeyB64: message.encryptedAesKeyB64,
-                                salt: saltBytes,
-                                expiration: message.expiration,
-                                messages: [],
-                                participants: message.participants || [] // Store participants
-                            };
-                            vaults.set(message.vaultId, vault);
-                            addVaultToSidebar(vault);
-                            showMessageBox('Vault Joined!', `You have joined "${vault.name}".`);
-                        } else {
-                            // Update existing vault's properties, especially participants
-                            vault.participants = message.participants || [];
-                            console.log(`Updated participants for vault ${vault.name}:`, vault.participants);
-                            // showMessageBox('Vault Joined/Updated!', `Vault "${vault.name}" updated (e.g., new participant joined).`);
-                        }
-                        await saveVaultsToLocalStorage();
-                        selectVault(message.vaultId); // Auto-select the joined/updated vault
-                        document.getElementById('join-vault-modal').classList.remove('show');
+                        vaults.set(joinedVaultId, {
+                            id: joinedVaultId,
+                            name: joinedVaultName,
+                            type: joinedVaultType,
+                            expiration: joinedExpiration,
+                            key: joinedVaultAesKey,
+                            messages: []
+                        });
+                        await saveVaultsToLocalStorage(); // Await saving
+                        renderVaultList();
+                        showMessageBox('Vault Joined!', `You have joined "${joinedVaultName}".`, () => {
+                            selectVault(joinedVaultId);
+                        });
                         break;
                     case 'new_message':
-                        // Handle messages relayed by the server (can be new or offline messages)
-                        const targetVault = vaults.get(message.vaultId);
-                        if (targetVault) {
-                            // If it's a file chunk, process it as such
-                            const isIncomingFilePart = (message.fileId !== undefined && message.chunkIndex !== undefined && message.totalChunks !== undefined);
-                            if (isIncomingFilePart) {
-                                if (!incomingFileChunks.has(message.fileId)) {
-                                    incomingFileChunks.set(message.fileId, {
-                                        fileName: message.fileName,
-                                        fileMimeType: message.fileMimeType,
-                                        totalChunks: message.totalChunks,
-                                        iv: message.iv, // IV for the whole file
-                                        senderId: message.senderId,
-                                        timestamp: message.timestamp,
-                                        receivedChunks: new Map(),
-                                        placeholderMessageElement: null
-                                    });
-
-                                    // Display placeholder message for incoming file only if active vault
-                                    if (activeVaultId === message.vaultId) {
-                                        const chatWindow = document.getElementById('chat-window');
-                                        const placeholderDiv = document.createElement('div');
-                                        placeholderDiv.className = `message other`;
-                                        placeholderDiv.innerHTML = `
-                                            <div class="message-sender">User: ${message.senderId.substring(0, 8)}...</div>
-                                            <div class="message-content">Receiving file: ${message.fileName || 'unknown'} (0/${message.totalChunks} chunks received) via Server...</div>
-                                            <span class="message-timestamp">${new Date(message.timestamp).toLocaleTimeString()}</span>
-                                        `;
-                                        chatWindow.appendChild(placeholderDiv);
-                                        chatWindow.scrollTop = chatWindow.scrollHeight;
-                                        incomingFileChunks.get(message.fileId).placeholderMessageElement = placeholderDiv;
-                                    }
+                        const { vaultId: msgVaultId, senderId, encryptedMessage, iv, timestamp, isFile, fileName, fileMimeType } = data;
+                        const vault = vaults.get(msgVaultId);
+                        if (vault) {
+                            try {
+                                const decryptedContent = await decryptMessage(encryptedMessage, iv, vault.key);
+                                const messageObj = {
+                                    sender: senderId,
+                                    content: decryptedContent,
+                                    timestamp: timestamp,
+                                    isFile: isFile,
+                                    fileName: fileName,
+                                    fileMimeType: fileMimeType
+                                };
+                                vault.messages.push(messageObj);
+                                console.log(`New message for vault ${msgVaultId}:`, messageObj);
+                                await saveVaultsToLocalStorage(); // Await saving
+                                if (activeVaultId === msgVaultId) {
+                                    displayMessage(messageObj);
                                 }
-
-                                const fileData = incomingFileChunks.get(message.fileId);
-                                fileData.receivedChunks.set(message.chunkIndex, message.encryptedMessage);
-
-                                if (activeVaultId === message.vaultId && fileData.placeholderMessageElement) {
-                                    const contentSpan = fileData.placeholderMessageElement.querySelector('.message-content');
-                                    if (contentSpan) {
-                                        contentSpan.textContent = `Receiving file: ${message.fileName || 'unknown'} (${fileData.receivedChunks.size}/${message.totalChunks} chunks received) via Server`;
-                                    }
-                                    document.getElementById('chat-window').scrollTop = document.getElementById('chat-window').scrollHeight;
+                            } catch (e) {
+                                console.error("Failed to decrypt incoming message:", e);
+                                // Display a placeholder or error message if decryption fails
+                                const messageObj = {
+                                    sender: senderId,
+                                    content: "[Could not decrypt message]",
+                                    timestamp: timestamp,
+                                    isFile: false // Assume not a file if decryption failed
+                                };
+                                vault.messages.push(messageObj);
+                                await saveVaultsToLocalStorage(); // Await saving
+                                if (activeVaultId === msgVaultId) {
+                                    displayMessage(messageObj);
                                 }
-
-
-                                if (fileData.receivedChunks.size === fileData.totalChunks) {
-                                    const sortedChunks = Array.from(fileData.receivedChunks.entries())
-                                                              .sort(([idxA], [idxB]) => idxA - idxB)
-                                                              .map(([, chunk]) => chunk);
-                                    const combinedEncryptedRawBase64 = sortedChunks.join('');
-
-                                    try {
-                                        const decryptedContent = await decryptMessage(combinedEncryptedRawBase64, fileData.iv, targetVault.key);
-
-                                        const messageObj = {
-                                            id: message.id, // Keep server ID if available
-                                            senderId: message.senderId,
-                                            content: decryptedContent,
-                                            timestamp: fileData.timestamp, // Use file's original timestamp
-                                            isFile: true,
-                                            fileName: fileData.fileName,
-                                            fileMimeType: fileData.fileMimeType,
-                                            deliveryMethod: 'Server' // Indicate server delivery
-                                        };
-
-                                        targetVault.messages.push(messageObj);
-                                        if (activeVaultId === message.vaultId) {
-                                            if (fileData.placeholderMessageElement) {
-                                                fileData.placeholderMessageElement.remove(); // Remove placeholder
-                                            }
-                                            displayMessage(messageObj);
-                                        }
-                                        showMessageBox('File Received!', `File "${fileData.fileName}" received via server in vault "${targetVault.name}".`);
-                                        incomingFileChunks.delete(message.fileId); // Clean up
-                                    }
-                                    catch (e) {
-                                        console.error("Error decrypting/reassembling server-relayed file:", e);
-                                        const errorMsg = {
-                                            id: message.id,
-                                            senderId: message.senderId,
-                                            content: `[Error receiving file "${fileName || 'unknown'}" via Server: ${e.message}]`,
-                                            timestamp: message.timestamp,
-                                            isFile: false,
-                                            deliveryMethod: 'Server'
-                                        };
-                                        targetVault.messages.push(errorMsg);
-                                        if (activeVaultId === message.vaultId) {
-                                            if (fileData.placeholderMessageElement) {
-                                                fileData.placeholderMessageElement.remove();
-                                            }
-                                            displayMessage(errorMsg);
-                                        }
-                                        incomingFileChunks.delete(message.fileId);
-                                    }
-                                }
-
-                            } else { // Regular text message via server
-                                decryptAndDisplayMessage(
-                                    message.vaultId,
-                                    message.senderId,
-                                    message.encryptedMessage,
-                                    message.iv,
-                                    message.timestamp,
-                                    message.isFile,
-                                    message.fileName,
-                                    message.fileMimeType,
-                                    'Server' // Delivery method
-                                );
                             }
-                            await saveVaultsToLocalStorage();
                         } else {
-                            console.warn(`Received message for unknown vault ID: ${message.vaultId}`);
+                            console.warn(`Received message for unknown vault ID: ${msgVaultId}. Message:`, data);
                         }
-                        break;
-                    case 'webrtc_signal':
-                        handleWebRTCSignal(message);
                         break;
                     case 'offline_messages':
-                         // Handle offline messages when reconnecting/registering
-                        console.log("Received offline messages:", message.messages.length);
-                        for (const msg of message.messages) {
-                            const targetVault = vaults.get(msg.vaultId);
-                            if (targetVault) {
-                                // Re-process as new_message, ensuring file reassembly works
-                                if (msg.isFile && msg.fileId && msg.totalChunks) {
-                                    // Treat as a server-relayed chunk
-                                     if (!incomingFileChunks.has(msg.fileId)) {
-                                        incomingFileChunks.set(msg.fileId, {
-                                            fileName: msg.fileName,
-                                            fileMimeType: msg.fileMimeType,
-                                            totalChunks: msg.totalChunks,
-                                            iv: msg.iv,
-                                            senderId: msg.senderId,
-                                            timestamp: msg.timestamp,
-                                            receivedChunks: new Map(),
-                                            placeholderMessageElement: null
-                                        });
-                                    }
-                                    const fileData = incomingFileChunks.get(msg.fileId);
-                                    fileData.receivedChunks.set(msg.chunkIndex, msg.encryptedMessage);
-
-                                    if (fileData.receivedChunks.size === fileData.totalChunks) {
-                                        const sortedChunks = Array.from(fileData.receivedChunks.entries())
-                                                              .sort(([idxA], [idxB]) => idxA - idxB)
-                                                              .map(([, chunk]) => chunk);
-                                        const combinedEncryptedRawBase64 = sortedChunks.join('');
-
-                                        try {
-                                            const decryptedContent = await decryptMessage(combinedEncryptedRawBase64, fileData.iv, targetVault.key);
-                                            const messageObj = {
-                                                id: msg.id || crypto.randomUUID(),
-                                                senderId: msg.senderId,
-                                                content: decryptedContent,
-                                                timestamp: fileData.timestamp,
-                                                isFile: true,
-                                                fileName: fileData.fileName,
-                                                fileMimeType: fileData.fileMimeType,
-                                                deliveryMethod: 'Server (Offline)'
-                                            };
-                                            targetVault.messages.push(messageObj);
-                                            if (activeVaultId === msg.vaultId) {
-                                                displayMessage(messageObj);
-                                            }
-                                            incomingFileChunks.delete(msg.fileId);
-                                        } catch (e) {
-                                            console.error("Error decrypting/reassembling offline file:", e);
-                                            // Fallback to displaying error message
-                                            targetVault.messages.push({
-                                                id: msg.id || crypto.randomUUID(),
-                                                senderId: msg.senderId,
-                                                content: `[Error receiving offline file "${msg.fileName || 'unknown'}": ${e.message}]`,
-                                                timestamp: msg.timestamp,
-                                                isFile: false,
-                                                deliveryMethod: 'Server (Offline)'
-                                            });
-                                            if (activeVaultId === msg.vaultId) {
-                                                displayMessage(targetVault.messages[targetVault.messages.length - 1]);
-                                            }
-                                            incomingFileChunks.delete(msg.fileId);
-                                        }
-                                    }
-                                } else { // Regular text message
-                                    decryptAndDisplayMessage(
-                                        msg.vaultId,
-                                        msg.senderId,
-                                        msg.encryptedMessage,
-                                        msg.iv,
-                                        msg.timestamp,
-                                        msg.isFile,
-                                        msg.fileName,
-                                        msg.fileMimeType,
-                                        'Server (Offline)'
-                                    );
+                        console.log(`Received ${data.messages.length} offline messages.`);
+                        for (const msg of data.messages) {
+                            const { vaultId: msgVaultId, senderId, encryptedMessage, iv, timestamp, isFile, fileName, fileMimeType } = msg;
+                            const vault = vaults.get(msgVaultId);
+                            if (vault) {
+                                try {
+                                    const decryptedContent = await decryptMessage(encryptedMessage, iv, vault.key);
+                                    const messageObj = {
+                                        sender: senderId,
+                                        content: decryptedContent,
+                                        timestamp: timestamp,
+                                        isFile: isFile,
+                                        fileName: fileName,
+                                        fileMimeType: fileMimeType
+                                    };
+                                    vault.messages.push(messageObj);
+                                    console.log(`Processed offline message for vault ${msgVaultId}:`, messageObj);
+                                } catch (e) {
+                                    console.error("Failed to decrypt offline message:", e);
+                                    vault.messages.push({
+                                        sender: senderId,
+                                        content: "[Decryption Failed]",
+                                        timestamp: timestamp,
+                                        isFile: false
+                                    });
                                 }
+                            } else {
+                                console.warn(`Received offline message for unknown vault ID: ${msgVaultId}. Message:`, msg);
                             }
                         }
-                        await saveVaultsToLocalStorage();
+                        await saveVaultsToLocalStorage(); // Await saving
+                        // Re-render chat for the active vault if new offline messages were added to it
+                        if (activeVaultId && vaults.has(activeVaultId)) {
+                            renderChatMessages(activeVaultId);
+                        }
                         break;
-                    default:
-                        console.warn('Unknown message type:', message.type);
+                    case 'error':
+                        showMessageBox('Error', data.message);
+                        break;
+                    case 'vault_expired_notification':
+                        const { expiredVaultId, expiredVaultName } = data;
+                        if (vaults.has(expiredVaultId)) {
+                             vaults.delete(expiredVaultId);
+                             await saveVaultsToLocalStorage(); // Await saving after deletion
+                             renderVaultList();
+                             if (activeVaultId === expiredVaultId) {
+                                 activeVaultId = null;
+                                 document.getElementById('chat-window').classList.add('hidden');
+                                 document.getElementById('chat-input-area').classList.add('hidden');
+                                 document.getElementById('no-vault-selected').classList.remove('hidden');
+                             }
+                             showMessageBox('Vault Expired', `The vault "${expiredVaultName}" has expired and all its data has been wiped.`);
+                        } else {
+                            console.log(`Received expiration for unknown or already removed vault: ${expiredVaultName} (${expiredVaultId})`);
+                        }
+                        break;
                 }
             };
 
-            ws.onclose = (event) => {
-                console.log('WebSocket disconnected:', event);
-                // Attempt to reconnect after a delay
-                setTimeout(initWebSocket, 5000); // Try to reconnect every 5 seconds
+            ws.onclose = () => {
+                console.log('WebSocket disconnected. Attempting to reconnect in 5 seconds...');
+                // Consider adding a visual indicator for disconnection
+                setTimeout(initWebSocket, 5000);
             };
 
-            ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                ws.close(); // Close the connection to trigger onclose and retry
+            ws.onerror = (event) => {
+                console.error('WebSocket error event:', event);
+                showMessageBox('Connection Error',
+                    `Could not connect to the server at ${SERVER_URL}. ` +
+                    `Please ensure:
+                    1. The Node.js server is running.
+                    2. The SERVER_URL in index.html is correct.
+                    3. If deployed (e.g., to Render), use 'wss://' for the SERVER_URL.`);
             };
         }
 
         /**
-         * Sends a message (or file chunk) to the server.
-         * @param {object} messageData - The message data object.
+         * Sends a message to the WebSocket server.
+         * @param {object} message - The message object to send.
          */
-        function sendMessageToServer(messageData) {
+        function sendMessageToServer(message) {
             if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify(messageData));
+                ws.send(JSON.stringify(message));
             } else {
-                showMessageBox('Connection Error', 'Not connected to the server. Message cannot be sent.');
+                showMessageBox('Connection Error', 'Not connected to server. Please wait or refresh.');
+                console.warn("Attempted to send message while WebSocket is not open.", message);
             }
         }
 
+        // --- Local Storage Management ---
 
         /**
-         * Decrypts and displays a message.
-         * @param {string} vaultId - The vault ID.
-         * @param {string} senderId - The ID of the sender.
-         * @param {string} encryptedMessage - The Base64 encrypted message content.
-         * @param {string} ivB64 - The Base64 encoded IV.
-         * @param {number} timestamp - The message timestamp.
-         * @param {boolean} isFile - Whether the message is a file.
-         * @param {string} fileName - File name if it's a file.
-         * @param {string} fileMimeType - File MIME type if it's a file.
-         * @param {string} deliveryMethod - 'Server' or 'P2P'
-         */
-        async function decryptAndDisplayMessage(vaultId, senderId, encryptedMessage, ivB64, timestamp, isFile, fileName, fileMimeType, deliveryMethod) {
-            const vault = vaults.get(vaultId);
-            if (!vault) {
-                console.error("Vault not found for decryption:", vaultId);
-                return;
-            }
-
-            let decryptedContent;
-            try {
-                decryptedContent = await decryptMessage(encryptedMessage, ivB64, vault.key);
-            } catch (e) {
-                console.error("Decryption failed for message:", e);
-                decryptedContent = "[Decryption Failed - Message Corrupted]";
-            }
-
-            const messageObj = {
-                id: crypto.randomUUID(), // Generate a local ID
-                senderId: senderId,
-                content: decryptedContent,
-                timestamp: timestamp,
-                isFile: isFile,
-                fileName: fileName,
-                fileMimeType: fileMimeType,
-                deliveryMethod: deliveryMethod // Store delivery method
-            };
-
-            vault.messages.push(messageObj);
-            if (activeVaultId === vaultId) {
-                displayMessage(messageObj);
-            }
-            // No need to call saveVaultsToLocalStorage here, it's handled after message processing.
-        }
-
-        // --- UI and Local Storage Management ---
-
-        /**
-         * Saves all vaults to local storage.
+         * Saves all vaults data to localStorage.
+         * Note: CryptoKey objects cannot be directly stored. We export them to raw ArrayBuffer (Base64)
+         * and re-import them when loading.
          */
         async function saveVaultsToLocalStorage() {
+            console.log("Saving vaults to localStorage...");
             const serializableVaults = [];
             for (const [id, vault] of vaults.entries()) {
-                // To save CryptoKey, we need to export it to a raw format
-                const rawKey = await exportKey(vault.key);
-                serializableVaults.push({
-                    id: vault.id,
-                    name: vault.name,
-                    type: vault.type,
-                    // Store encryptedAesKeyB64 and salt, not the raw key, so it can be re-derived
-                    encryptedAesKeyB64: vault.encryptedAesKeyB64,
-                    saltB64: btoa(String.fromCharCode(...vault.salt)),
-                    ivB64: btoa(String.fromCharCode(...vault.iv)),
-                    vaultHash: vault.vaultHash,
-                    expiration: vault.expiration,
-                    messages: vault.messages,
-                    participants: vault.participants // Save participants
-                });
+                try {
+                    const exportedKey = await exportKey(vault.key);
+                    serializableVaults.push({
+                        id: vault.id,
+                        name: vault.name,
+                        type: vault.type,
+                        expiration: vault.expiration,
+                        key: btoa(String.fromCharCode(...new Uint8Array(exportedKey))), // Base64 encode key
+                        messages: vault.messages // Messages are already serializable
+                    });
+                } catch (e) {
+                    console.error(`Failed to export key for vault ${id}:`, e);
+                    // Optionally, remove this vault from the list to be saved if its key is corrupted
+                }
             }
-            localStorage.setItem('vaults', JSON.stringify(serializableVaults));
-            localStorage.setItem('activeVaultId', activeVaultId);
+            try {
+                localStorage.setItem('thePlatformVaults', JSON.stringify(serializableVaults));
+                console.log("Vaults successfully saved to localStorage.");
+            } catch (e) {
+                console.error("Error saving vaults to localStorage:", e);
+                showMessageBox('Storage Error', 'Could not save data to local storage. Your browser might be full or private browsing is enabled.');
+            }
         }
 
         /**
-         * Loads vaults from local storage.
+         * Loads vaults data from localStorage.
          */
         async function loadVaultsFromLocalStorage() {
-            const storedVaults = JSON.parse(localStorage.getItem('vaults') || '[]');
-            for (const sVault of storedVaults) {
+            console.log("Loading vaults from localStorage...");
+            const storedVaults = localStorage.getItem('thePlatformVaults');
+            vaults.clear(); // Clear existing vaults before loading
+            if (storedVaults) {
                 try {
-                    // Re-derive the AES key from hash using stored salt
-                    const saltBytes = Uint8Array.from(atob(sVault.saltB64), c => c.charCodeAt(0));
-                    const derivedKey = await deriveKeyFromHash(sVault.vaultHash, saltBytes);
-                    const decryptedAesKeyBytes = await decryptData(
-                        Uint8Array.from(atob(sVault.encryptedAesKeyB64), c => c.charCodeAt(0)),
-                        Uint8Array.from(atob(sVault.ivB64), c => c.charCodeAt(0)),
-                        derivedKey
-                    );
-                    const aesKey = await importKey(decryptedAesKeyBytes);
-
-                    vaults.set(sVault.id, {
-                        id: sVault.id,
-                        name: sVault.name,
-                        type: sVault.type,
-                        key: aesKey,
-                        iv: Uint8Array.from(atob(sVault.ivB64), c => c.charCodeAt(0)),
-                        vaultHash: sVault.vaultHash,
-                        encryptedAesKeyB64: sVault.encryptedAesKeyB64,
-                        salt: saltBytes,
-                        expiration: sVault.expiration,
-                        messages: sVault.messages || [],
-                        participants: sVault.participants || [] // Load participants
-                    });
-                    addVaultToSidebar(vaults.get(sVault.id));
-                } catch (e) {
-                    console.error(`Failed to load vault ${sVault.id}:`, e);
-                    // Optionally remove corrupted vault from local storage
-                }
-            }
-            const storedActiveVaultId = localStorage.getItem('activeVaultId');
-            if (storedActiveVaultId && vaults.has(storedActiveVaultId)) {
-                selectVault(storedActiveVaultId);
-            }
-        }
-
-        /**
-         * Adds a vault to the sidebar list.
-         * @param {object} vault - The vault object.
-         */
-        function addVaultToSidebar(vault) {
-            const vaultList = document.getElementById('vault-list');
-            let vaultItem = document.getElementById(`vault-${vault.id}`);
-            if (!vaultItem) { // Only create if it doesn't exist
-                vaultItem = document.createElement('div');
-                vaultItem.id = `vault-${vault.id}`;
-                vaultItem.className = 'vault-item';
-                vaultItem.onclick = () => selectVault(vault.id);
-                vaultList.appendChild(vaultItem);
-            }
-            // Update content in case vault properties changed (e.g., name, participants)
-            const participantCount = vault.participants ? ` (${vault.participants.length})` : '';
-            vaultItem.innerHTML = `
-                <span>${vault.name} (${vault.type})</span>
-                <span class="text-xs text-gray-500">${new Date(vault.expiration).toLocaleDateString() === 'Invalid Date' ? 'Never' : new Date(vault.expiration).toLocaleDateString()}</span>
-            `;
-            // Add tooltip for participants if it's a private vault
-            if (vault.type === 'private' && vault.participants && vault.participants.length > 0) {
-                 const otherParticipant = vault.participants.find(p => p !== userId);
-                 if (otherParticipant) {
-                     vaultItem.title = `Direct message with: ${otherParticipant.substring(0,8)}...`;
-                 }
-            }
-        }
-
-        /**
-         * Selects a vault and displays its messages.
-         * @param {string} vaultId - The ID of the vault to select.
-         */
-        function selectVault(vaultId) {
-            if (activeVaultId) {
-                const prevActiveItem = document.getElementById(`vault-${activeVaultId}`);
-                if (prevActiveItem) {
-                    prevActiveItem.classList.remove('active');
-                }
-            }
-
-            activeVaultId = vaultId;
-            localStorage.setItem('activeVaultId', activeVaultId);
-
-            const selectedVault = vaults.get(vaultId);
-            if (selectedVault) {
-                document.getElementById('no-vault-selected').classList.add('hidden');
-                document.getElementById('chat-window').classList.remove('hidden');
-                document.getElementById('chat-input-area').classList.remove('hidden');
-
-                const vaultItem = document.getElementById(`vault-${vaultId}`);
-                if (vaultItem) {
-                    vaultItem.classList.add('active');
-                }
-
-                document.getElementById('chat-window').innerHTML = ''; // Clear previous messages
-                selectedVault.messages.forEach(msg => displayMessage(msg));
-                document.getElementById('chat-window').scrollTop = document.getElementById('chat-window').scrollHeight;
-
-                // For private vaults, try to establish P2P connection with the other participant
-                if (selectedVault.type === 'private' && selectedVault.participants.length === 2) {
-                    const otherParticipantId = selectedVault.participants.find(p => p !== userId);
-                    if (otherParticipantId) {
-                        console.log(`Attempting P2P connection with ${otherParticipantId} for vault ${vaultId}`);
-                        setupPeerConnection(otherParticipantId, vaultId, true); // This client is the initiator
+                    const parsedVaults = JSON.parse(storedVaults);
+                    for (const serializedVault of parsedVaults) {
+                        try {
+                            const importedKey = await importKey(Uint8Array.from(atob(serializedVault.key), c => c.charCodeAt(0)));
+                            vaults.set(serializedVault.id, {
+                                id: serializedVault.id,
+                                name: serializedVault.name,
+                                type: serializedVault.type,
+                                expiration: serializedVault.expiration,
+                                key: importedKey,
+                                messages: serializedVault.messages || []
+                            });
+                            console.log(`Loaded vault: ${serializedVault.name} (${serializedVault.id})`);
+                        } catch (e) {
+                            console.error(`Failed to load vault ${serializedVault.id} from localStorage (key import failed):`, e);
+                            // This vault might be corrupted or key unimportable, skip it.
+                        }
                     }
+                    console.log(`Finished loading ${vaults.size} vaults from localStorage.`);
+                    renderVaultList();
+                    // If there are vaults, select the first one by default or previously active
+                    if (vaults.size > 0) {
+                        const lastActiveVaultId = localStorage.getItem('lastActiveVaultId');
+                        if (lastActiveVaultId && vaults.has(lastActiveVaultId)) {
+                            selectVault(lastActiveVaultId);
+                        } else {
+                            selectVault(vaults.keys().next().value); // Select the first available vault
+                        }
+                    } else {
+                        console.log("No vaults found in localStorage.");
+                        document.getElementById('no-vault-selected').classList.remove('hidden');
+                        document.getElementById('chat-window').classList.add('hidden');
+                        document.getElementById('chat-input-area').classList.add('hidden');
+                    }
+                } catch (e) {
+                    console.error("Error parsing vaults from localStorage:", e);
+                    showMessageBox('Data Corruption', 'Local vault data is corrupted. Clearing data and starting fresh.');
+                    localStorage.removeItem('thePlatformVaults'); // Clear corrupted data
+                    // Reload the page or simply continue with empty vaults
+                    renderVaultList();
                 }
-
             } else {
-                console.error('Vault not found:', vaultId);
-                document.getElementById('no-vault-selected').classList.remove('hidden');
+                console.log("No vaults found in localStorage initially.");
+            }
+        }
+
+        /**
+         * Clears all local data (vaults, messages, user ID).
+         */
+        function nukeAllData() {
+            showMessageBox('Confirm Nuke', 'Are you sure you want to wipe ALL your local data and disconnect? This action cannot be undone. This will also attempt to clear your data on the server.', async () => {
+                localStorage.removeItem('thePlatformVaults');
+                localStorage.removeItem('thePlatformUserId');
+                localStorage.removeItem('lastActiveVaultId');
+                vaults.clear();
+                activeVaultId = null;
+                document.getElementById('chat-window').innerHTML = '';
+                document.getElementById('vault-list').innerHTML = '';
                 document.getElementById('chat-window').classList.add('hidden');
                 document.getElementById('chat-input-area').classList.add('hidden');
+                document.getElementById('no-vault-selected').classList.remove('hidden');
+                document.getElementById('current-user-id').textContent = 'Nuked! Reopen for new ID.';
+
+                // Inform server to remove user's data
+                sendMessageToServer({ type: 'nuke', userId: userId });
+
+                // Simulate closing the page by clearing content and displaying a message
+                document.body.innerHTML = `
+                    <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-gray-700">
+                        <h1 class="text-4xl font-bold mb-4">Data Nuked!</h1>
+                        <p class="text-lg">All your local data has been wiped.</p>
+                        <p class="text-lg">To start fresh, please reopen "The Platform".</p>
+                    </div>
+                `;
+            });
+        }
+
+
+        // --- UI Rendering ---
+
+        /**
+         * Renders the list of vaults in the sidebar.
+         */
+        function renderVaultList() {
+            const vaultListDiv = document.getElementById('vault-list');
+            vaultListDiv.innerHTML = '';
+            if (vaults.size === 0) {
+                vaultListDiv.innerHTML = '<p class="text-center text-gray-500 text-sm mt-4">No vaults yet. Create or join one!</p>';
             }
+            vaults.forEach(vault => {
+                const vaultItem = document.createElement('div');
+                vaultItem.className = `vault-item ${activeVaultId === vault.id ? 'active' : ''}`;
+                vaultItem.dataset.vaultId = vault.id;
+                vaultItem.innerHTML = `
+                    <span>${vault.name} (${vault.type === 'private' ? 'DM' : 'Group'})</span>
+                    <span class="text-xs text-gray-500">${vault.expiration === 'never' ? 'Never Exp.' : `Exp: ${vault.expiration}`}</span>
+                `;
+                vaultItem.addEventListener('click', () => selectVault(vault.id));
+                vaultListDiv.appendChild(vaultItem);
+            });
         }
 
         /**
@@ -1595,130 +1046,172 @@
         function displayMessage(message) {
             const chatWindow = document.getElementById('chat-window');
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${message.senderId === userId ? 'self' : 'other'}`;
-            // Add a data attribute to uniquely identify messages for updates (e.g., file transfer progress)
-            messageDiv.setAttribute('data-message-id', message.id);
+            messageDiv.className = `message ${message.sender === userId ? 'self' : 'other'}`;
 
-            const sender = message.senderId === userId ? 'You' : `User: ${message.senderId.substring(0, 8)}...`;
-            const timestamp = new Date(message.timestamp).toLocaleTimeString(); // Only time for conciseness
+            const senderSpan = document.createElement('div');
+            senderSpan.className = 'message-sender';
+            senderSpan.textContent = message.sender === userId ? 'You' : `User: ${message.sender.substring(0, 8)}...`;
+            messageDiv.appendChild(senderSpan);
 
-            let contentHtml = '';
             if (message.isFile) {
-                // Ensure the content for files is a full Data URL before creating the download link
-                const fullDataUrl = message.content.startsWith('data:') ? message.content : `data:${message.fileMimeType};base64,${message.content}`;
-                contentHtml = `
-                    <div class="message-file" data-base64="${fullDataUrl}" data-filename="${message.fileName}" data-mimetype="${message.fileMimeType}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
-                            <path fill-rule="evenodd" d="M19.5 7.5a3 3 0 0 0-3-3h-8.25a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h8.25a3 3 0 0 0 3-3v-9Z" clip-rule="evenodd" />
-                        </svg>
-                        <span>${message.fileName} (${(fullDataUrl.length * 0.75 / 1024 / 1024).toFixed(2)} MB)</span>
-                    </div>
+                const fileLink = document.createElement('div');
+                fileLink.className = 'message-file';
+                fileLink.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path d="M19.5 7.5c-1.25 0-2.5.31-3.57.88-.85.45-1.48 1.12-1.87 1.94-.17.36-.31.75-.41 1.15a.75.75 0 0 1-1.09-.72c.16-.49.37-.96.6-1.42.34-.67.79-1.28 1.34-1.83 1.04-1.04 2.39-1.66 3.86-1.8.02-.01.04-.02.06-.02a.75.75 0 0 1 .78 1.25c-.06.05-.12.09-.18.14-.8.6-1.25 1.4-1.25 2.25v.75h.75c.85 0 1.65-.45 2.25-1.25.05-.06.09-.12.14-.18a.75.75 0 0 1 1.25.78c-.01.02-.02.04-.02.06-.14 1.47-.76 2.82-1.8 3.86-1.04 1.04-2.39 1.66-3.86 1.8-.02.01-.04.02-.06.02a.75.75 0 0 1-.78-1.25c.06-.05.12-.09.18-.14.8-.6 1.25-1.4 1.25-2.25V7.5h-.75Zm-10.5 0c-1.25 0-2.5.31-3.57.88-.85.45-1.48 1.12-1.87 1.94-.17.36-.31.75-.41 1.15a.75.75 0 0 1-1.09-.72c.16-.49.37-.96.6-1.42.34-.67.79-1.28 1.34-1.83 1.04-1.04 2.39-1.66 3.86-1.8.02-.01.04-.02.06-.02a.75.75 0 0 1 .78 1.25c-.06.05-.12.09-.18.14-.8.6-1.25 1.4-1.25 2.25v.75h.75c.85 0 1.65-.45 2.25-1.25.05-.06.09-.12.14-.18a.75.75 0 0 1 1.25.78c-.01.02-.02.04-.02.06-.14 1.47-.76 2.82-1.8 3.86-1.04 1.04-2.39 1.66-3.86 1.8-.02.01-.04.02-.06.02a.75.75 0 0 1-.78-1.25c.06-.05.12-.09.18-.14.8-.6 1.25-1.4 1.25-2.25V7.5h-.75Z" />
+                    </svg>
+                    <span>${message.fileName || 'File'}</span>
                 `;
+                fileLink.addEventListener('click', () => downloadFile(message.content, message.fileName, message.fileMimeType));
+                messageDiv.appendChild(fileLink);
             } else {
-                contentHtml = `<div class="message-content">${message.content}</div>`;
+                const contentSpan = document.createElement('div');
+                contentSpan.className = 'message-content';
+                contentSpan.textContent = message.content;
+                messageDiv.appendChild(contentSpan);
             }
 
-            messageDiv.innerHTML = `
-                <div class="message-sender">${sender} <span class="text-xs text-gray-400">(${message.deliveryMethod})</span></div>
-                ${contentHtml}
-                <span class="message-timestamp">${timestamp}</span>
-            `;
+            const timestampSpan = document.createElement('span');
+            timestampSpan.className = 'message-timestamp';
+            timestampSpan.textContent = new Date(message.timestamp).toLocaleTimeString();
+            messageDiv.appendChild(timestampSpan);
+
             chatWindow.appendChild(messageDiv);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-
-            // Add event listener for file download
-            if (message.isFile) {
-                const fileLink = messageDiv.querySelector('.message-file');
-                if (fileLink) {
-                    fileLink.addEventListener('click', (e) => {
-                        const base64Data = e.currentTarget.dataset.base64;
-                        const filename = e.currentTarget.dataset.filename;
-                        const mimeType = e.currentTarget.dataset.mimetype;
-                        downloadFile(base64Data, filename, mimeType);
-                    });
-                }
-            }
+            chatWindow.scrollTop = chatWindow.scrollHeight; // Scroll to bottom
         }
 
+        /**
+         * Renders all messages for the currently selected vault.
+         * @param {string} vaultId - The ID of the vault whose messages to render.
+         */
+        function renderChatMessages(vaultId) {
+            const chatWindow = document.getElementById('chat-window');
+            chatWindow.innerHTML = ''; // Clear previous messages
+            const vault = vaults.get(vaultId);
+            if (vault && vault.messages) {
+                // Sort messages by timestamp to ensure correct order
+                vault.messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+                vault.messages.forEach(msg => displayMessage(msg));
+            }
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        /**
+         * Selects a vault and displays its chat.
+         * @param {string} vaultId - The ID of the vault to select.
+         */
+        function selectVault(vaultId) {
+            if (!vaults.has(vaultId)) {
+                console.warn(`Attempted to select non-existent vault: ${vaultId}`);
+                showMessageBox('Vault Not Found', 'This vault no longer exists locally. It might have expired or been removed.');
+                activeVaultId = null;
+                document.getElementById('no-vault-selected').classList.remove('hidden');
+                document.getElementById('chat-window').classList.add('hidden');
+                document.getElementById('chat-input-area').classList.add('hidden');
+                renderVaultList(); // Re-render to ensure no vault is marked active
+                return;
+            }
+
+            activeVaultId = vaultId;
+            localStorage.setItem('lastActiveVaultId', vaultId); // Using localStorage for persistence
+            renderVaultList(); // Update active class
+            document.getElementById('no-vault-selected').classList.add('hidden');
+            document.getElementById('chat-window').classList.remove('hidden');
+            document.getElementById('chat-input-area').classList.remove('hidden');
+            renderChatMessages(vaultId);
+            document.getElementById('message-input').focus();
+            console.log(`Selected vault: ${vaults.get(vaultId).name} (${vaultId})`);
+        }
 
         // --- Event Listeners and Initial Setup ---
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            initWebSocket();
-            await loadVaultsFromLocalStorage();
+        document.addEventListener('DOMContentLoaded', () => {
+            // Generate or retrieve unique user ID from localStorage
+            userId = localStorage.getItem('thePlatformUserId');
+            if (!userId) {
+                userId = crypto.randomUUID(); // Generate a new complex random ID
+                localStorage.setItem('thePlatformUserId', userId);
+                console.log(`Generated new user ID: ${userId}`);
+            } else {
+                console.log(`Loaded existing user ID: ${userId}`);
+            }
+            document.getElementById('current-user-id').textContent = userId;
 
-            // Modals Logic
+            initWebSocket(); // Initialize WebSocket connection
+
+            // Modals
             const createVaultModal = document.getElementById('create-vault-modal');
             const joinVaultModal = document.getElementById('join-vault-modal');
+            const createVaultBtn = document.getElementById('create-vault-btn');
+            const joinVaultBtn = document.getElementById('join-vault-btn');
+            const createVaultClose = document.getElementById('create-vault-close');
+            const joinVaultClose = document.getElementById('join-vault-close');
 
-            document.getElementById('create-vault-btn').addEventListener('click', () => {
+            createVaultBtn.addEventListener('click', () => {
                 createVaultModal.classList.add('show');
-                document.getElementById('create-vault-hash-display').classList.add('hidden'); // Hide hash display on opening
+                document.getElementById('create-vault-hash-display').classList.add('hidden'); // Hide hash display initially
+                document.getElementById('create-vault-form').reset(); // Clear form
             });
-            document.getElementById('create-vault-close').addEventListener('click', () => {
-                createVaultModal.classList.remove('show');
-            });
-
-            document.getElementById('join-vault-btn').addEventListener('click', () => {
+            joinVaultBtn.addEventListener('click', () => {
                 joinVaultModal.classList.add('show');
+                document.getElementById('join-vault-form').reset(); // Clear form
             });
-            document.getElementById('join-vault-close').addEventListener('click', () => {
-                joinVaultModal.classList.remove('show');
-            });
+            createVaultClose.addEventListener('click', () => createVaultModal.classList.remove('show'));
+            joinVaultClose.addEventListener('click', () => joinVaultModal.classList.remove('show'));
 
-            // Handle create vault form submission
+            // Create Vault Form Submission
             document.getElementById('create-vault-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const vaultName = document.getElementById('vault-name').value;
                 const vaultType = document.getElementById('vault-type').value;
                 const expirationTime = document.getElementById('expiration-time').value;
 
-                const aesKey = await generateAesKey();
-                const rawKey = await exportKey(aesKey);
-                const iv = crypto.getRandomValues(new Uint8Array(16)); // IV for vault key encryption
-                const salt = crypto.getRandomValues(new Uint8Array(16)); // Salt for PBKDF2
+                // Generate a new AES key for the vault
+                const vaultAesKey = await generateAesKey();
+                const rawVaultAesKey = await exportKey(vaultAesKey);
 
-                // Generate a random, cryptographically strong hash as the vault password
-                const vaultHashArray = crypto.getRandomValues(new Uint8Array(32)); // 256-bit hash
-                const vaultHash = Array.from(vaultHashArray).map(b => b.toString(16).padStart(2, '0')).join(''); // Convert to hex string
+                // Generate a random salt for PBKDF2
+                const salt = crypto.getRandomValues(new Uint8Array(16));
 
-                const derivedKey = await deriveKeyFromHash(vaultHash, salt);
-                const { encryptedData: encryptedAesKey, iv: ivForAesKey } = await encryptData(rawKey, derivedKey);
-
+                // Send request to server to create vault. Server will generate hash and encrypt the vault key.
                 sendMessageToServer({
                     type: 'create_vault',
+                    userId: userId,
                     vaultName: vaultName,
                     vaultType: vaultType,
                     expiration: expirationTime,
-                    encryptedAesKeyB64: btoa(String.fromCharCode(...new Uint8Array(encryptedAesKey))),
-                    saltB64: btoa(String.fromCharCode(...salt)),
-                    ivB64: btoa(String.fromCharCode(...ivForAesKey)), // IV for AES key encryption
-                    vaultHash: vaultHash,
-                    userId: userId
+                    rawVaultKeyB64: btoa(String.fromCharCode(...new Uint8Array(rawVaultAesKey))), // Send raw key to server for encryption
+                    saltB64: btoa(String.fromCharCode(...salt)) // Send salt to server
                 });
+
+                // The vault_created message from server will handle adding to local vaults and UI update
             });
 
+            // Copy Hash Button
+            // FIX: Added type="button" to prevent accidental form submission
             document.getElementById('copy-hash-btn').addEventListener('click', () => {
                 const hash = document.getElementById('generated-vault-hash').textContent;
-                copyToClipboard(hash);
+                if (hash) {
+                    copyToClipboard(hash);
+                }
             });
 
-
-            // Handle join vault form submission
-            document.getElementById('join-vault-form').addEventListener('submit', async (e) => {
+            // Join Vault Form Submission
+            document.getElementById('join-vault-form').addEventListener('submit', (e) => {
                 e.preventDefault();
                 const joinVaultHash = document.getElementById('join-vault-hash').value;
                 const joinVaultName = document.getElementById('join-vault-name').value;
 
                 sendMessageToServer({
                     type: 'join_vault',
+                    userId: userId,
                     vaultHash: joinVaultHash,
-                    vaultName: joinVaultName, // Client-side name for reference
-                    userId: userId
+                    vaultName: joinVaultName // User-given name for their reference
                 });
+                joinVaultModal.classList.remove('show');
             });
 
-            // Handle message sending
+            // Send Message Button
             document.getElementById('send-message-btn').addEventListener('click', async () => {
                 const messageInput = document.getElementById('message-input');
                 const fileInput = document.getElementById('file-input');
@@ -1726,178 +1219,88 @@
                 const file = fileInput.files[0];
 
                 if (!activeVaultId) {
-                    showMessageBox('Error', 'Please select a vault first.');
+                    showMessageBox('No Vault Selected', 'Please select a vault to send messages.');
                     return;
                 }
 
                 if (!messageText && !file) {
-                    showMessageBox('Empty Message', 'Please type a message or select a file.');
-                    return;
+                    return; // Don't send empty messages
                 }
 
                 const vault = vaults.get(activeVaultId);
                 if (!vault) {
                     showMessageBox('Error', 'Active vault not found. Please re-select or refresh.');
+                    console.error("Attempted to send message to a non-existent active vault.");
                     return;
                 }
 
-                const timestamp = Date.now();
-                const messageId = crypto.randomUUID(); // Unique ID for this message/file transfer
+                let encryptedContent;
+                let ivB64;
+                let isFile = false;
+                let fileName = null;
+                let fileMimeType = null;
 
-                // --- Handle file sending ---
+                // Create the message object for local display first
+                const localMessageObj = {
+                    sender: userId, // This message is from the current user
+                    timestamp: new Date().toISOString(),
+                };
+
                 if (file) {
-                    const base64File = await fileToBase64(file);
-                    // Get only the base64 data part, remove "data:mime/type;base64," prefix
-                    const rawBase64Data = base64File.split(',')[1];
-                    const fileMimeType = file.type || 'application/octet-stream';
+                    try {
+                        const base64File = await fileToBase64(file);
+                        const { encryptedMessage, iv } = await encryptMessage(base64File, vault.key);
+                        encryptedContent = encryptedMessage;
+                        ivB64 = iv;
+                        isFile = true;
+                        fileName = file.name;
+                        fileMimeType = file.type;
+                        messageInput.value = ''; // Clear text input if file is sent
+                        fileInput.value = ''; // Clear file input
 
-                    const totalChunks = Math.ceil(rawBase64Data.length / CHUNK_SIZE);
-                    const iv = crypto.getRandomValues(new Uint8Array(16)); // IV for the whole file
-                    const ivB64 = btoa(String.fromCharCode(...iv));
+                        localMessageObj.content = base64File; // Store raw content for local display
+                        localMessageObj.isFile = true;
+                        localMessageObj.fileName = fileName;
+                        localMessageObj.fileMimeType = fileMimeType;
 
-                    // Display pending message locally
-                    const localMessageObj = {
-                        id: messageId,
-                        senderId: userId,
-                        content: `Sending file: ${file.name} (0/${totalChunks} chunks sent)...`,
-                        timestamp: timestamp,
-                        isFile: true,
-                        fileName: file.name,
-                        fileMimeType: fileMimeType,
-                        deliveryMethod: 'Pending' // Initial status
-                    };
-                    vault.messages.push(localMessageObj);
-                    displayMessage(localMessageObj);
-                    await saveVaultsToLocalStorage();
-
-                    let sentViaP2P = false;
-                    let recipientId = null;
-
-                    if (vault.type === 'private' && vault.participants && vault.participants.length === 2) {
-                        recipientId = vault.participants.find(p => p !== userId);
-                        const dc = dataChannels.get(recipientId);
-                        if (dc && dc.readyState === 'open') {
-                             sentViaP2P = true;
-                        }
+                    } catch (error) {
+                        console.error("Error encrypting file:", error);
+                        showMessageBox('Encryption Error', 'Failed to encrypt file. Please try again.');
+                        return;
                     }
+                } else {
+                    try {
+                        const { encryptedMessage, iv } = await encryptMessage(messageText, vault.key);
+                        encryptedContent = encryptedMessage;
+                        ivB64 = iv;
+                        messageInput.value = ''; // Clear text input
 
-                    // Loop through chunks and send
-                    for (let i = 0; i < totalChunks; i++) {
-                        const start = i * CHUNK_SIZE;
-                        const end = start + CHUNK_SIZE;
-                        const chunk = rawBase64Data.substring(start, end);
-
-                        const { encryptedMessage: encryptedChunk, iv: chunkIvB64 } = await encryptMessage(chunk, vault.key);
-
-                        const messageData = {
-                            type: isFile ? 'file_chunk' : 'chat_message', // Use file_chunk type for P2P/server
-                            vaultId: activeVaultId,
-                            senderId: userId,
-                            encryptedMessage: encryptedChunk,
-                            iv: chunkIvB64, // Each chunk gets its own IV for encryption
-                            timestamp: timestamp, // Use the same timestamp for all chunks of a file
-                            isFile: true,
-                            fileName: file.name,
-                            fileMimeType: fileMimeType,
-                            fileId: messageId, // Unique ID for this file transfer
-                            chunkIndex: i,
-                            totalChunks: totalChunks
-                        };
-
-                        if (sentViaP2P && recipientId) {
-                            try {
-                                const dc = dataChannels.get(recipientId);
-                                if (dc && dc.readyState === 'open') {
-                                    dc.send(JSON.stringify(messageData));
-                                    // console.log(`Sent file chunk ${i} via P2P to ${recipientId}`);
-                                } else {
-                                    sentViaP2P = false; // Data channel closed mid-transfer, fallback to server
-                                    console.warn(`P2P data channel closed for ${recipientId}. Falling back to server for chunk ${i}.`);
-                                    sendMessageToServer(messageData);
-                                }
-                            } catch (e) {
-                                console.warn(`P2P send failed for chunk ${i}:`, e, "Falling back to server.");
-                                sentViaP2P = false;
-                                sendMessageToServer(messageData);
-                            }
-                        } else {
-                            sendMessageToServer(messageData);
-                            // console.log(`Sent file chunk ${i} via Server.`);
-                        }
-
-                        // Update local display for progress
-                        localMessageObj.content = `Sending file: ${file.name} (${i + 1}/${totalChunks} chunks sent)...`;
-                        localMessageObj.deliveryMethod = sentViaP2P ? 'P2P' : 'Server'; // Update delivery method based on last chunk
-                        const messageDivToUpdate = document.getElementById('chat-window').querySelector(`[data-message-id="${messageId}"]`);
-                        if (messageDivToUpdate) {
-                            messageDivToUpdate.querySelector('.message-content').textContent = localMessageObj.content;
-                             messageDivToUpdate.querySelector('.message-sender span.text-xs').textContent = `(${localMessageObj.deliveryMethod})`;
-                        }
-                        document.getElementById('chat-window').scrollTop = document.getElementById('chat-window').scrollHeight;
+                        localMessageObj.content = messageText; // Store raw content for local display
+                        localMessageObj.isFile = false;
+                    } catch (error) {
+                        console.error("Error encrypting message:", error);
+                        showMessageBox('Encryption Error', 'Failed to encrypt message. Please try again.');
+                        return;
                     }
-                    showMessageBox('File Sent!', `File "${file.name}" sent.`);
-                    // Reset file input
-                    fileInput.value = '';
                 }
 
-                // --- Handle text message sending ---
-                if (messageText) {
-                    const { encryptedMessage: encryptedContent, iv: ivB64 } = await encryptMessage(messageText, vault.key);
+                // Add message to local vault and display it immediately
+                vault.messages.push(localMessageObj);
+                displayMessage(localMessageObj); // Display immediately
+                await saveVaultsToLocalStorage(); // Ensure local storage is updated
 
-                    const localMessageObj = {
-                        id: messageId,
-                        senderId: userId,
-                        content: messageText, // Store unencrypted content locally for immediate display
-                        timestamp: timestamp,
-                        isFile: false,
-                        deliveryMethod: 'Pending' // Initial status
-                    };
-
-                    let sentViaP2P = false;
-                    if (vault.type === 'private' && vault.participants && vault.participants.length === 2) {
-                        const otherParticipantId = vault.participants.find(p => p !== userId);
-                        const dc = dataChannels.get(otherParticipantId);
-                        if (dc && dc.readyState === 'open') {
-                            try {
-                                const messageData = {
-                                    type: 'chat_message', // Use a distinct type for P2P messages
-                                    vaultId: activeVaultId,
-                                    senderId: userId,
-                                    encryptedMessage: encryptedContent,
-                                    iv: ivB64,
-                                    timestamp: timestamp,
-                                    isFile: false
-                                };
-                                dc.send(JSON.stringify(messageData));
-                                sentViaP2P = true;
-                                console.log(`Sent text message via P2P to ${otherParticipantId}`);
-                                localMessageObj.deliveryMethod = 'P2P'; // Update status for local display
-                            } catch (e) {
-                                console.warn("P2P send failed for text message:", e, "Falling back to server.");
-                            }
-                        }
-                    }
-
-                    if (!sentViaP2P) {
-                        sendMessageToServer({
-                            type: 'send_message', // Server expects 'send_message' for text
-                            vaultId: activeVaultId,
-                            senderId: userId,
-                            encryptedMessage: encryptedContent,
-                            iv: ivB64,
-                            timestamp: timestamp, // Use the same timestamp
-                            isFile: false
-                        });
-                        console.log("Sent text message via Server.");
-                        localMessageObj.deliveryMethod = 'Server'; // Update status for local display
-                    }
-
-                    vault.messages.push(localMessageObj);
-                    displayMessage(localMessageObj); // Display immediately
-                    await saveVaultsToLocalStorage(); // Ensure local storage is updated
-
-                    messageInput.value = ''; // Clear input field
-                }
+                // Now send the encrypted message to the server
+                sendMessageToServer({
+                    type: 'send_message',
+                    vaultId: activeVaultId,
+                    senderId: userId,
+                    encryptedMessage: encryptedContent,
+                    iv: ivB64,
+                    timestamp: localMessageObj.timestamp, // Use the same timestamp
+                    isFile: isFile,
+                    fileName: fileName,
+                    fileMimeType: fileMimeType
+                });
             });
 
             // Attach File Button
@@ -1914,61 +1317,6 @@
                     document.getElementById('send-message-btn').click();
                 }
             });
-
-            // Handle window beforeunload to ensure data is saved
-            window.addEventListener('beforeunload', async () => {
-                await saveVaultsToLocalStorage();
-                // Close all WebRTC peer connections and data channels cleanly
-                peerConnections.forEach(pc => pc.close());
-                dataChannels.forEach(dc => dc.close());
-            });
-
-            // Nuke All Data function
-            async function nukeAllData() {
-                showMessageBox(
-                    'Confirm Nuke',
-                    'Are you sure you want to delete ALL your local vaults and messages, and clear your user ID? This cannot be undone.',
-                    () => {
-                        // User clicked OK in the first confirmation
-                        const confirmation = prompt('Type "NUKE" to confirm irreversible data deletion:');
-                        if (confirmation === 'NUKE') {
-                            localStorage.clear(); // Clears all local storage
-                            vaults.clear(); // Clears in-memory vaults
-                            activeVaultId = null;
-                            userId = null; // Clear userId
-
-                            // Close all WebRTC connections
-                            peerConnections.forEach(pc => pc.close());
-                            dataChannels.forEach(dc => dc.close());
-                            peerConnections.clear();
-                            dataChannels.clear();
-                            pendingIceCandidates.clear();
-                            pendingOffers.clear();
-                            p2pChannelLabels.clear();
-
-
-                            // Clear UI
-                            document.getElementById('vault-list').innerHTML = '';
-                            document.getElementById('chat-window').innerHTML = '';
-                            document.getElementById('no-vault-selected').classList.remove('hidden');
-                            document.getElementById('chat-window').classList.add('hidden');
-                            document.getElementById('chat-input-area').classList.add('hidden');
-                            document.getElementById('current-user-id').textContent = 'Regenerating...';
-
-                            // Optionally send a 'nuke' command to the server to clear server-side data
-                            if (ws && ws.readyState === WebSocket.OPEN) {
-                                ws.send(JSON.stringify({ type: 'nuke', userId: userId })); // Send current userId before clearing
-                            }
-
-                            showMessageBox('Data Nuked!', 'All local data and user ID have been cleared. A new user ID will be generated on next connection.');
-                            // Reinitialize WebSocket to get new ID
-                            initWebSocket();
-                        } else {
-                            showMessageBox('Nuke Cancelled', 'Data deletion cancelled.');
-                        }
-                    }
-                );
-            }
         });
     </script>
 </body>
