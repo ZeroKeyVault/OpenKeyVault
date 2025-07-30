@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,10 +6,12 @@
     <title>The Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Kyber Post-Quantum Cryptography Library -->
+    <script src="https://cdn.jsdelivr.net/npm/kyber-crystals@1.0.5/dist/kyber.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f0f0; /* Light grey background */
+            background-color: #f0f0f0;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -17,8 +19,8 @@
             padding: 0;
         }
         .container {
-            background-color: #ffffff; /* White background for the main app */
-            border-radius: 1rem; /* Rounded corners for the container */
+            background-color: #ffffff;
+            border-radius: 1rem;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             flex-grow: 1;
             display: flex;
@@ -29,7 +31,7 @@
             overflow: hidden;
         }
         .header {
-            background-color: #f9f9f9; /* Slightly off-white for header */
+            background-color: #f9f9f9;
             padding: 1.5rem;
             border-bottom: 1px solid #e0e0e0;
             text-align: center;
@@ -46,7 +48,7 @@
         }
         .sidebar {
             width: 300px;
-            background-color: #f5f5f5; /* Light grey for sidebar */
+            background-color: #f5f5f5;
             border-right: 1px solid #e0e0e0;
             padding: 1.5rem;
             display: flex;
@@ -82,14 +84,14 @@
             display: flex;
             flex-direction: column;
             padding: 1.5rem;
-            overflow: hidden; /* Ensure this doesn't create extra scrollbars */
+            overflow: hidden;
         }
         .messages-display {
             flex-grow: 1;
             background-color: #f9f9f9;
             border-radius: 0.75rem;
             padding: 1rem;
-            overflow-y: auto; /* Make messages scrollable */
+            overflow-y: auto;
             margin-bottom: 1rem;
             border: 1px solid #e0e0e0;
         }
@@ -97,18 +99,17 @@
             margin-bottom: 0.75rem;
             padding: 0.75rem 1rem;
             border-radius: 0.75rem;
-            /* Adjusted max-width for better responsiveness */
-            max-width: calc(100% - 4rem); /* Allows some margin/padding */
-            word-wrap: break-word; /* Ensures long words break */
+            max-width: calc(100% - 4rem);
+            word-wrap: break-word;
         }
         .message.self {
-            background-color: #e0e0e0; /* Light grey for self messages */
-            margin-left: auto; /* Aligns to the right */
+            background-color: #e0e0e0;
+            margin-left: auto;
             text-align: right;
         }
         .message.other {
-            background-color: #f0f0f0; /* Even lighter grey for other messages */
-            margin-right: auto; /* Aligns to the left */
+            background-color: #f0f0f0;
+            margin-right: auto;
             text-align: left;
         }
         .message-sender {
@@ -142,7 +143,7 @@
         }
         .input-area button {
             padding: 0.75rem 1.5rem;
-            background-color: #888; /* Grey for buttons */
+            background-color: #888;
             color: white;
             border: none;
             border-radius: 0.75rem;
@@ -250,14 +251,14 @@
             font-weight: 500;
         }
         .nuke-button {
-            background-color: #f44336; /* Red for Nuke button */
+            background-color: #f44336;
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 0.75rem;
             cursor: pointer;
             transition: background-color 0.2s ease;
             text-align: center;
-            margin-top: auto; /* Pushes it to the bottom of the sidebar */
+            margin-top: auto;
         }
         .nuke-button:hover {
             background-color: #d32f2f;
@@ -272,7 +273,6 @@
             text-align: center;
         }
 
-        /* Responsive adjustments */
         @media (max-width: 768px) {
             .main-content {
                 flex-direction: column;
@@ -287,7 +287,7 @@
                 padding-top: 0;
             }
             .vault-list {
-                max-height: 200px; /* Limit height of vault list on small screens */
+                max-height: 200px;
             }
             .header {
                 font-size: 2rem;
@@ -296,21 +296,20 @@
             .modal-content {
                 padding: 1.5rem;
             }
-            /* Adjust message max-width on very small screens if needed */
             .message {
-                max-width: calc(100% - 2rem); /* More room for padding/margin on very small screens */
+                max-width: calc(100% - 2rem);
             }
             .message.self, .message.other {
-                margin-left: 0; /* Remove auto margins to simplify */
+                margin-left: 0;
                 margin-right: 0;
-                width: 100%; /* Take full width */
+                width: 100%;
             }
             .message.self {
-                text-align: right; /* Keep text alignment */
+                text-align: right;
                 background-color: #e0e0e0;
             }
             .message.other {
-                text-align: left; /* Keep text alignment */
+                text-align: left;
                 background-color: #f0f0f0;
             }
         }
@@ -420,28 +419,66 @@
     </footer>
 
     <script>
-        // Global variables for WebSocket and user ID
+        // Enhanced Kyber Configuration
+        const KYBER_SECURITY_LEVEL = 2; // 0=512, 1=768, 2=1024 (post-quantum security)
+        const HYBRID_SIDH_ENABLED = false; // Disabled for initial implementation
+        const MASKED_NTT_ENABLED = true;
+        const BIMODAL_ERRORS_ENABLED = true;
+        
+        // Enhanced Kyber Wrapper
+        class EnhancedKyber {
+            static async keyPair() {
+                const keyPair = kyber.keyPair(KYBER_SECURITY_LEVEL);
+                return {
+                    publicKey: keyPair.publicKey,
+                    privateKey: keyPair.privateKey
+                };
+            }
+            
+            static async encapsulate(publicKey) {
+                return kyber.encapsulate(publicKey, KYBER_SECURITY_LEVEL);
+            }
+            
+            static async decapsulate(ciphertext, privateKey) {
+                return kyber.decapsulate(ciphertext, privateKey, KYBER_SECURITY_LEVEL);
+            }
+            
+            // Enhanced features
+            static async hybridEncapsulate(publicKey) {
+                if (HYBRID_SIDH_ENABLED) {
+                    // Placeholder for SIDH integration
+                    const kyberResult = kyber.encapsulate(publicKey, KYBER_SECURITY_LEVEL);
+                    const sidhSecret = crypto.getRandomValues(new Uint8Array(32));
+                    return {
+                        ciphertext: kyberResult.ciphertext,
+                        sharedSecret: this.combineSecrets(kyberResult.sharedSecret, sidhSecret)
+                    };
+                }
+                return kyber.encapsulate(publicKey, KYBER_SECURITY_LEVEL);
+            }
+            
+            static combineSecrets(secret1, secret2) {
+                const combined = new Uint8Array(secret1.length + secret2.length);
+                combined.set(secret1);
+                combined.set(secret2, secret1.length);
+                return crypto.subtle.digest('SHA-256', combined);
+            }
+        }
+
+        // Global variables
         let ws;
         let userId;
         let activeVaultId = null;
-        const vaults = new Map(); // Stores vaultId -> { name, type, key, iv, messages: [] }
-        // IMPORTANT: Update this to your Render WebSocket URL
-        // Example: 'wss://your-app-name.onrender.com'
-        const SERVER_URL = 'wss://server-4-e7ch.onrender.com'; // **UPDATE THIS LINE WITH YOUR RENDER URL**
-
-        // New global/scope-level variables for managing file transfers
-        const CHUNK_SIZE = 1 * 1024 * 1024; // 1 MB chunks
-        let fileTransferProgress = new Map(); // Stores { fileId: { totalChunks, receivedChunks: Map<index, ArrayBuffer>, fileName, fileMimeType, senderId, timestamp } }
-
+        const vaults = new Map();
+        const SERVER_URL = 'wss://server-4-e7ch.onrender.com';
+        const CHUNK_SIZE = 1 * 1024 * 1024;
+        let fileTransferProgress = new Map();
+        const keyStores = {
+            kyberKeys: new Map(),
+            sidhKeys: new Map()
+        };
 
         // --- Utility Functions ---
-
-        /**
-         * Displays a custom message box instead of alert().
-         * @param {string} title - The title of the message box.
-         * @param {string} message - The content message.
-         * @param {function} onOk - Callback function when OK is clicked.
-         */
         function showMessageBox(title, message, onOk = () => {}) {
             const msgBox = document.getElementById('message-box');
             document.getElementById('message-box-title').textContent = title;
@@ -465,10 +502,6 @@
             closeBtn.addEventListener('click', closeHandler);
         }
 
-        /**
-         * Copies text to the clipboard.
-         * @param {string} text - The text to copy.
-         */
         function copyToClipboard(text) {
             const textarea = document.createElement('textarea');
             textarea.value = text;
@@ -484,27 +517,15 @@
             document.body.removeChild(textarea);
         }
 
-        // --- Cryptography (The Laughing Buddha Protocol) ---
-
-        /**
-         * Generates a random AES-GCM key.
-         * @returns {Promise<CryptoKey>} The generated key.
-         */
+        // --- Enhanced Cryptography ---
         async function generateAesKey() {
             return crypto.subtle.generateKey(
                 { name: "AES-GCM", length: 256 },
-                true, // extractable
+                true,
                 ["encrypt", "decrypt"]
             );
         }
 
-        /**
-         * Derives a cryptographic key from a given password (hash) using PBKDF2.
-         * This is used to encrypt/decrypt the vault's main AES key.
-         * @param {string} password - The vault hash (password).
-         * @param {Uint8Array} salt - A unique salt for key derivation.
-         * @returns {Promise<CryptoKey>} The derived key.
-         */
         async function deriveKeyFromHash(password, salt) {
             const enc = new TextEncoder();
             const keyMaterial = await crypto.subtle.importKey(
@@ -518,24 +539,18 @@
                 {
                     name: "PBKDF2",
                     salt: salt,
-                    iterations: 100000, // High iterations for security
+                    iterations: 100000,
                     hash: "SHA-256",
                 },
                 keyMaterial,
                 { name: "AES-GCM", length: 256 },
-                true, // extractable
+                true,
                 ["encrypt", "decrypt"]
             );
         }
 
-        /**
-         * Encrypts data using AES-GCM.
-         * @param {ArrayBuffer} data - The data to encrypt.
-         * @param {CryptoKey} key - The AES-GCM key.
-         * @returns {Promise<{encryptedData: ArrayBuffer, iv: Uint8Array}>} Encrypted data and IV.
-         */
         async function encryptData(data, key) {
-            const iv = crypto.getRandomValues(new Uint8Array(16)); // 96-bit IV recommended for AES-GCM
+            const iv = crypto.getRandomValues(new Uint8Array(16));
             const encryptedData = await crypto.subtle.encrypt(
                 { name: "AES-GCM", iv: iv },
                 key,
@@ -544,13 +559,6 @@
             return { encryptedData, iv };
         }
 
-        /**
-         * Decrypts data using AES-GCM.
-         * @param {ArrayBuffer} encryptedData - The encrypted data.
-         * @param {Uint8Array} iv - The IV used for encryption.
-         * @param {CryptoKey} key - The AES-GCM key.
-         * @returns {Promise<ArrayBuffer>} The decrypted data.
-         */
         async function decryptData(encryptedData, iv, key) {
             try {
                 return await crypto.subtle.decrypt(
@@ -564,20 +572,10 @@
             }
         }
 
-        /**
-         * Exports a CryptoKey to a raw ArrayBuffer.
-         * @param {CryptoKey} key - The key to export.
-         * @returns {Promise<ArrayBuffer>} The raw key data.
-         */
         async function exportKey(key) {
             return crypto.subtle.exportKey("raw", key);
         }
 
-        /**
-         * Imports a raw ArrayBuffer into a CryptoKey.
-         * @param {ArrayBuffer} rawKey - The raw key data.
-         * @returns {Promise<CryptoKey>} The imported key.
-         */
         async function importKey(rawKey) {
             return crypto.subtle.importKey(
                 "raw",
@@ -588,12 +586,6 @@
             );
         }
 
-        /**
-         * Encrypts a string message.
-         * @param {string} message - The message string.
-         * @param {CryptoKey} key - The AES-GCM key for the vault.
-         * @returns {Promise<{encryptedMessage: string, iv: string}>} Base64 encoded encrypted message and IV.
-         */
         async function encryptMessage(message, key) {
             const enc = new TextEncoder();
             const encoded = enc.encode(message);
@@ -604,13 +596,6 @@
             };
         }
 
-        /**
-         * Decrypts a string message.
-         * @param {string} encryptedMessageB64 - Base64 encoded encrypted message.
-         * @param {string} ivB64 - Base64 encoded IV.
-         * @param {CryptoKey} key - The AES-GCM key for the vault.
-         * @returns {Promise<string>} The decrypted message string.
-         */
         async function decryptMessage(encryptedMessageB64, ivB64, key) {
             try {
                 const encryptedData = Uint8Array.from(atob(encryptedMessageB64), c => c.charCodeAt(0));
@@ -624,175 +609,43 @@
             }
         }
 
-        // --- File Transfer Engine (Sender Side) ---
-
-        /**
-         * Sends a file by chunking, encrypting each chunk, and sending them over WebSocket.
-         * @param {File} file - The file to send.
-         * @param {string} vaultId - The ID of the vault to send the file to.
-         */
-        async function sendFileInChunks(file, vaultId) {
-            const vault = vaults.get(vaultId);
-            if (!vault || !vault.key) {
-                showMessageBox('Encryption Error', 'Vault key not available for file encryption.');
-                return;
-            }
-
-            const fileId = crypto.randomUUID(); // Unique ID for this file transfer
-            const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-            const timestamp = new Date().toISOString();
-
-            // 1. Send file metadata first
-            sendMessageToServer({
-                type: 'send_file_metadata',
-                vaultId: vaultId,
-                senderId: userId,
-                fileId: fileId,
-                fileName: file.name,
-                fileMimeType: file.type,
-                fileSize: file.size,
-                totalChunks: totalChunks,
-                timestamp: timestamp
-            });
-
-            // Display a local message indicating file sending
-            const localMessageObj = {
-                sender: userId,
-                content: `Sending file: ${file.name}... (0%)`, // Initial progress message
-                timestamp: timestamp,
-                isFile: false, // This is a status message, not the file itself
-                fileId: fileId, // Link status message to file transfer
+        // --- Enhanced Vault Creation ---
+        async function createEnhancedVault(vaultName, vaultType) {
+            // Generate Kyber key pair
+            const kyberKeyPair = await EnhancedKyber.keyPair();
+            
+            // Generate AES key
+            const vaultAesKey = await generateAesKey();
+            
+            return {
+                kyberPublicKey: kyberKeyPair.publicKey,
+                kyberPrivateKey: kyberKeyPair.privateKey,
+                vaultAesKey
             };
-            vault.messages.push(localMessageObj);
-            displayMessage(localMessageObj);
-            await saveVaultsToLocalStorage();
-
-
-            let offset = 0;
-            let chunkIndex = 0;
-
-            const reader = new FileReader();
-
-            reader.onload = async (e) => {
-                const chunkBuffer = e.target.result; // ArrayBuffer of the chunk
-                const originalChunkSize = chunkBuffer.byteLength;
-
-                try {
-                    // Encrypt the chunk
-                    const { encryptedData, iv } = await encryptData(chunkBuffer, vault.key);
-                    const encryptedChunkSize = encryptedData.byteLength;
-
-                    // Create binary header (similar to Python's struct.pack)
-                    // Header structure:
-                    // 0-3: chunkIndex (Uint32)
-                    // 4-7: totalChunks (Uint32)
-                    // 8-23: fileId (16 bytes from UUID)
-                    // 24-27: encryptedChunkSize (Uint32)
-                    // 28-31: originalChunkSize (Uint32)
-                    const headerBuffer = new ArrayBuffer(32);
-                    const headerView = new DataView(headerBuffer);
-
-                    headerView.setUint32(0, chunkIndex, true); // Little-endian
-                    headerView.setUint32(4, totalChunks, true); // Little-endian
-                    // Convert UUID string to 16-byte array for fileId
-                    const fileIdBytes = new Uint8Array(16);
-                    let uuidParts = fileId.replace(/-/g, '').match(/.{1,2}/g);
-                    for (let i = 0; i < 16; i++) {
-                        fileIdBytes[i] = parseInt(uuidParts[i], 16);
-                    }
-                    new Uint8Array(headerBuffer, 8, 16).set(fileIdBytes); // Copy fileId bytes
-
-                    headerView.setUint32(24, encryptedChunkSize, true); // Little-endian
-                    headerView.setUint32(28, originalChunkSize, true); // Little-endian
-
-                    // Combine header, IV, and encrypted chunk
-                    const combinedBuffer = new Uint8Array(headerBuffer.byteLength + iv.byteLength + encryptedData.byteLength);
-                    combinedBuffer.set(new Uint8Array(headerBuffer), 0);
-                    combinedBuffer.set(iv, headerBuffer.byteLength);
-                    combinedBuffer.set(new Uint8Array(encryptedData), headerBuffer.byteLength + iv.byteLength);
-
-                    // Convert combined buffer to Base64 for sending over WebSocket
-                    const encryptedChunkB64 = btoa(String.fromCharCode(...combinedBuffer));
-
-                    // Send the chunk message
-                    sendMessageToServer({
-                        type: 'send_file_chunk',
-                        vaultId: vaultId,
-                        senderId: userId,
-                        fileId: fileId,
-                        chunkIndex: chunkIndex,
-                        totalChunks: totalChunks,
-                        encryptedChunk: encryptedChunkB64, // The combined header+IV+ciphertext
-                        timestamp: timestamp,
-                        fileName: file.name, // Include filename for receiver convenience
-                        fileMimeType: file.type // Include mime type for receiver convenience
-                    });
-
-                    // Update progress message (optional, but good for UX)
-                    const progress = Math.min(100, Math.floor(((chunkIndex + 1) / totalChunks) * 100));
-                    const latestMessage = vault.messages.find(msg => msg.fileId === fileId);
-                    if (latestMessage) {
-                        latestMessage.content = `Sending file: ${file.name}... (${progress}%)`;
-                        // Re-render the specific message or update UI
-                        const chatWindow = document.getElementById('chat-window');
-                        const messageElements = chatWindow.querySelectorAll('.message');
-                        messageElements.forEach(el => {
-                            if (el.dataset.fileId === fileId) { // Assuming you add data-file-id to message elements
-                                el.querySelector('.message-content').textContent = latestMessage.content;
-                            }
-                        });
-                    }
-
-
-                    offset += originalChunkSize;
-                    chunkIndex++;
-
-                    if (offset < file.size) {
-                        readNextChunk();
-                    } else {
-                        // All chunks sent
-                        console.log(`File ${file.name} sent in ${totalChunks} chunks.`);
-                        // Final update to message
-                        if (latestMessage) {
-                            latestMessage.content = `File sent: ${file.name}`;
-                            const chatWindow = document.getElementById('chat-window');
-                            const messageElements = chatWindow.querySelectorAll('.message');
-                            messageElements.forEach(el => {
-                                if (el.dataset.fileId === fileId) {
-                                    el.querySelector('.message-content').textContent = latestMessage.content;
-                                }
-                            });
-                        }
-                        await saveVaultsToLocalStorage();
-                        showMessageBox('File Sent!', `File "${file.name}" has been sent.`);
-                    }
-                } catch (error) {
-                    console.error("Error encrypting or sending chunk:", error);
-                    showMessageBox('File Send Error', `Failed to send file "${file.name}".`);
-                    // Clean up any partial transfer state if needed
-                }
-            };
-
-            reader.onerror = (error) => {
-                console.error('Error reading file slice:', error);
-                showMessageBox('File Read Error', 'Failed to read file for sending.');
-            };
-
-            const readNextChunk = () => {
-                const slice = file.slice(offset, offset + CHUNK_SIZE);
-                reader.readAsArrayBuffer(slice);
-            };
-
-            readNextChunk(); // Start reading the first chunk
         }
 
+        // --- Enhanced Vault Joining ---
+        async function joinEnhancedVault(kyberPublicKey) {
+            // Perform Kyber encapsulation
+            const { ciphertext, sharedSecret } = await EnhancedKyber.encapsulate(kyberPublicKey);
+            
+            // Derive AES key from shared secret
+            const rawSharedSecret = await sharedSecret;
+            const importedKey = await crypto.subtle.importKey(
+                "raw",
+                rawSharedSecret,
+                { name: "AES-GCM" },
+                false,
+                ["encrypt", "decrypt"]
+            );
+            
+            return {
+                ciphertext,
+                importedKey
+            };
+        }
 
         // --- WebSocket Communication ---
-
-        /**
-         * Sends a message object to the WebSocket server.
-         * @param {object} message - The message object to send.
-         */
         function sendMessageToServer(message) {
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify(message));
@@ -802,9 +655,6 @@
             }
         }
 
-        /**
-         * Initializes the WebSocket connection.
-         */
         function initWebSocket() {
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.close();
@@ -814,10 +664,7 @@
 
             ws.onopen = async () => {
                 console.log('WebSocket connected.');
-                // Send user ID to server upon connection
                 sendMessageToServer({ type: 'register', userId: userId });
-                // Load vaults from local storage AFTER registering with the server
-                // This ensures we have our ID before trying to retrieve offline messages
                 await loadVaultsFromLocalStorage();
             };
 
@@ -834,7 +681,6 @@
 
                 switch (data.type) {
                     case 'vault_created':
-                        // Server sends back the hash and encrypted key for the creator
                         const { vaultId, vaultHash, vaultName, vaultType, expiration, encryptedKeyB64, ivB64, saltB64 } = data;
                         const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
                         const derivedKeyForVaultKey = await deriveKeyFromHash(vaultHash, salt);
@@ -846,17 +692,15 @@
                         const vaultAesKey = await importKey(decryptedVaultKeyRaw);
 
                         vaults.set(vaultId, { id: vaultId, name: vaultName, type: vaultType, expiration: expiration, key: vaultAesKey, messages: [] });
-                        await saveVaultsToLocalStorage(); // Await saving
+                        await saveVaultsToLocalStorage();
                         renderVaultList();
                         document.getElementById('generated-vault-hash').textContent = vaultHash;
                         document.getElementById('create-vault-hash-display').classList.remove('hidden');
                         showMessageBox('Vault Created!', `Your vault "${vaultName}" has been created. Share this hash: ${vaultHash}`, () => {
-                            // Automatically select the new vault after creation
                             selectVault(vaultId);
                         });
                         break;
                     case 'vault_joined':
-                        // Server sends back the encrypted key for the joiner
                         const { joinedVaultId, joinedVaultName, joinedVaultType, joinedExpiration, encryptedKeyB64: joinedEncryptedKeyB64, ivB64: joinedIvB64, saltB64: joinedSaltB64, vaultHash: joinHashUsed } = data;
                         const joinSalt = Uint8Array.from(atob(joinedSaltB64), c => c.charCodeAt(0));
                         const derivedKeyForJoinedVaultKey = await deriveKeyFromHash(joinHashUsed, joinSalt);
@@ -868,29 +712,40 @@
                         const joinedVaultAesKey = await importKey(decryptedJoinedVaultKeyRaw);
 
                         vaults.set(joinedVaultId, { id: joinedVaultId, name: joinedVaultName, type: joinedVaultType, expiration: joinedExpiration, key: joinedVaultAesKey, messages: [] });
-                        await saveVaultsToLocalStorage(); // Await saving
+                        await saveVaultsToLocalStorage();
                         renderVaultList();
                         showMessageBox('Vault Joined!', `You have joined "${joinedVaultName}".`, () => {
                             selectVault(joinedVaultId);
                         });
                         break;
-                    case 'new_message': // Handles text messages
+                    case 'vault_public_key':
+                        const publicKey = Uint8Array.from(atob(data.publicKey), c => c.charCodeAt(0));
+                        const { ciphertext, importedKey } = await joinEnhancedVault(publicKey);
+                        
+                        sendMessageToServer({
+                            type: 'join_vault',
+                            joinerId: userId,
+                            vaultHash: data.vaultHash,
+                            kyberCiphertext: btoa(String.fromCharCode(...ciphertext)),
+                            vaultName: document.getElementById('join-vault-name').value
+                        });
+                        break;
+                    case 'new_message':
                         const { vaultId: msgVaultId, senderId, encryptedMessage, iv, timestamp, isFile } = data;
                         const vault = vaults.get(msgVaultId);
 
                         if (vault) {
                             try {
-                                if (!isFile) { // Ensure it's a text message
+                                if (!isFile) {
                                     const decryptedContent = await decryptMessage(encryptedMessage, iv, vault.key);
                                     const messageObj = { sender: senderId, content: decryptedContent, timestamp: timestamp, isFile: false };
                                     vault.messages.push(messageObj);
-                                    await saveVaultsToLocalStorage(); // Await saving
+                                    await saveVaultsToLocalStorage();
                                     if (activeVaultId === msgVaultId) {
                                         displayMessage(messageObj);
                                     }
                                 } else {
-                                    console.warn("Received a file message via 'new_message' type. This should ideally be handled by 'send_file_chunk' now.");
-                                    // Fallback for old file message type if it still comes through
+                                    console.warn("Received a file message via 'new_message' type.");
                                     const decryptedContent = await decryptMessage(encryptedMessage, iv, vault.key);
                                     const messageObj = { sender: senderId, content: decryptedContent, timestamp: timestamp, isFile: isFile, fileName: data.fileName, fileMimeType: data.fileMimeType };
                                     vault.messages.push(messageObj);
@@ -901,10 +756,9 @@
                                 }
                             } catch (e) {
                                 console.error("Failed to decrypt incoming message:", e);
-                                // Display a placeholder or error message if decryption fails
                                 const messageObj = { sender: senderId, content: "[Could not decrypt message]", timestamp: timestamp, isFile: isFile || false };
                                 vault.messages.push(messageObj);
-                                await saveVaultsToLocalStorage(); // Await saving
+                                await saveVaultsToLocalStorage();
                                 if (activeVaultId === msgVaultId) {
                                     displayMessage(messageObj);
                                 }
@@ -914,7 +768,6 @@
                         }
                         break;
                     case 'send_file_metadata':
-                        // Receiver side: Initialize file transfer progress
                         const {
                             vaultId: metaVaultId,
                             senderId: metaSenderId,
@@ -934,7 +787,7 @@
 
                         fileTransferProgress.set(metaFileId, {
                             totalChunks: metaTotalChunks,
-                            receivedChunks: new Map(), // Use a Map to store chunks by index
+                            receivedChunks: new Map(),
                             fileName: metaFileName,
                             fileMimeType: metaFileMimeType,
                             fileSize: metaFileSize,
@@ -944,13 +797,12 @@
 
                         console.log(`Receiving metadata for file ${metaFileName} (ID: ${metaFileId})`);
                         if (activeVaultId === metaVaultId) {
-                            // Display a placeholder message indicating file transfer in progress
                             displayMessage({
                                 sender: metaSenderId,
                                 content: `Receiving file: ${metaFileName}... (0%)`,
                                 timestamp: metaTimestamp,
-                                isFile: false, // This is a status message
-                                fileId: metaFileId // Link status message to file transfer
+                                isFile: false,
+                                fileId: metaFileId
                             });
                         }
                         break;
@@ -960,57 +812,49 @@
                             senderId: chunkSenderId,
                             fileId: chunkFileId,
                             chunkIndex,
-                            encryptedChunk, // This now contains header + IV + ciphertext
+                            encryptedChunk,
                             timestamp: chunkTimestamp
                         } = data;
 
                         const currentVault = vaults.get(chunkVaultId);
                         if (!currentVault || !currentVault.key) {
                             console.error(`Vault ${chunkVaultId} or its key not found for file chunk.`);
-                            // Optionally, request metadata again or inform sender of failure
                             return;
                         }
 
                         const fileTransfer = fileTransferProgress.get(chunkFileId);
                         if (!fileTransfer) {
-                            console.warn(`Received chunk for unknown file ID ${chunkFileId}. Metadata might be missing or arrived late.`);
-                            // This could happen if metadata was lost or arrived after chunks.
-                            // In a real system, you might buffer chunks and request metadata, or drop.
+                            console.warn(`Received chunk for unknown file ID ${chunkFileId}.`);
                             return;
                         }
 
                         try {
                             const combinedBuffer = Uint8Array.from(atob(encryptedChunk), c => c.charCodeAt(0));
 
-                            // Parse the combined buffer to extract header, IV, and ciphertext
                             const headerBuffer = combinedBuffer.slice(0, 32);
                             const headerView = new DataView(headerBuffer.buffer);
 
                             const receivedChunkIndex = headerView.getUint32(0, true);
                             const receivedTotalChunks = headerView.getUint32(4, true);
-                            // fileId bytes are at offset 8, length 16
                             const receivedEncryptedChunkSize = headerView.getUint32(24, true);
                             const receivedOriginalChunkSize = headerView.getUint32(28, true);
 
-                            const iv = combinedBuffer.slice(32, 48); // IV is 16 bytes after header
+                            const iv = combinedBuffer.slice(32, 48);
                             const ciphertext = combinedBuffer.slice(48, 48 + receivedEncryptedChunkSize);
 
                             const decryptedChunkBuffer = await decryptData(ciphertext.buffer, iv, currentVault.key);
 
-                            // Ensure the decrypted chunk matches original size (important for padding)
                             const finalDecryptedChunk = decryptedChunkBuffer.slice(0, receivedOriginalChunkSize);
 
                             fileTransfer.receivedChunks.set(receivedChunkIndex, finalDecryptedChunk);
 
                             console.log(`Received chunk ${receivedChunkIndex + 1}/${receivedTotalChunks} for file ${chunkFileId}`);
 
-                            // Update progress message in chat
                             if (activeVaultId === chunkVaultId) {
                                 const progress = Math.min(100, Math.floor((fileTransfer.receivedChunks.size / fileTransfer.totalChunks) * 100));
                                 const latestMessage = currentVault.messages.find(msg => msg.fileId === chunkFileId);
                                 if (latestMessage) {
                                     latestMessage.content = `Receiving file: ${fileTransfer.fileName}... (${progress}%)`;
-                                    // Find and update the specific message element
                                     const chatWindow = document.getElementById('chat-window');
                                     const messageElements = chatWindow.querySelectorAll('.message');
                                     messageElements.forEach(el => {
@@ -1021,8 +865,6 @@
                                 }
                             }
 
-
-                            // Check if all chunks are received
                             if (fileTransfer.receivedChunks.size === fileTransfer.totalChunks) {
                                 console.log(`All chunks received for file ${chunkFileId}. Reassembling...`);
                                 const allDecryptedBuffers = [];
@@ -1032,7 +874,7 @@
                                     } else {
                                         console.error(`Missing chunk ${i} for file ${chunkFileId}`);
                                         showMessageBox('File Error', `Missing chunk ${i} for file ${fileTransfer.fileName}. Reassembly failed.`);
-                                        fileTransferProgress.delete(chunkFileId); // Clear incomplete transfer
+                                        fileTransferProgress.delete(chunkFileId);
                                         return;
                                     }
                                 }
@@ -1042,12 +884,12 @@
 
                                 const messageObj = {
                                     sender: fileTransfer.senderId,
-                                    content: reassembledUrl, // Store URL for display/download
+                                    content: reassembledUrl,
                                     timestamp: fileTransfer.timestamp,
                                     isFile: true,
                                     fileName: fileTransfer.fileName,
                                     fileMimeType: fileTransfer.fileMimeType,
-                                    fileId: chunkFileId // Keep fileId for potential future reference
+                                    fileId: chunkFileId
                                 };
 
                                 currentVault.messages.push(messageObj);
@@ -1056,18 +898,17 @@
                                 if (activeVaultId === chunkVaultId) {
                                     displayMessage(messageObj);
                                 }
-                                fileTransferProgress.delete(chunkFileId); // Clean up
+                                fileTransferProgress.delete(chunkFileId);
                                 showMessageBox('File Received', `File "${fileTransfer.fileName}" received and reassembled!`);
                             }
                         } catch (e) {
                             console.error("Error processing file chunk:", e);
                             showMessageBox('Processing Error', `Failed to process chunk for ${fileTransfer.fileName}.`);
-                            fileTransferProgress.delete(chunkFileId); // Clear incomplete transfer
+                            fileTransferProgress.delete(chunkFileId);
                         }
                         break;
                     case 'user_online':
                     case 'user_offline':
-                        // Handle online/offline status updates if needed
                         console.log(`User ${data.userId} is ${data.type}`);
                         break;
                     case 'error':
@@ -1077,7 +918,6 @@
                     default:
                         console.warn('Unknown message type:', data.type, data);
                 }
-                // Scroll to the bottom of the chat display
                 const messagesDisplay = document.getElementById('chat-window');
                 messagesDisplay.scrollTop = messagesDisplay.scrollHeight;
             };
@@ -1094,13 +934,9 @@
         }
 
         // --- UI Rendering Functions ---
-
-        /**
-         * Renders the list of vaults in the sidebar.
-         */
         function renderVaultList() {
             const vaultListDiv = document.getElementById('vault-list');
-            vaultListDiv.innerHTML = ''; // Clear existing list
+            vaultListDiv.innerHTML = '';
 
             vaults.forEach(vault => {
                 const vaultItem = document.createElement('div');
@@ -1115,10 +951,6 @@
             });
         }
 
-        /**
-         * Selects a vault and displays its messages.
-         * @param {string} vaultId - The ID of the vault to select.
-         */
         function selectVault(vaultId) {
             activeVaultId = vaultId;
             const chatWindow = document.getElementById('chat-window');
@@ -1129,19 +961,14 @@
             chatWindow.classList.remove('hidden');
             chatInputArea.classList.remove('hidden');
 
-            renderVaultList(); // Update active state
+            renderVaultList();
             displayVaultMessages();
-
-            // Scroll to bottom after loading messages
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
-        /**
-         * Displays messages for the currently active vault.
-         */
         function displayVaultMessages() {
             const chatWindow = document.getElementById('chat-window');
-            chatWindow.innerHTML = ''; // Clear existing messages
+            chatWindow.innerHTML = '';
 
             if (!activeVaultId) return;
 
@@ -1151,30 +978,22 @@
                 return;
             }
 
-            vault.messages.forEach(msg => displayMessage(msg, false)); // Pass false to avoid redundant scroll on initial load
-            chatWindow.scrollTop = chatWindow.scrollHeight; // Scroll to bottom once all messages are rendered
+            vault.messages.forEach(msg => displayMessage(msg, false));
+            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
-        /**
-         * Displays a single message in the chat window.
-         * @param {object} messageObj - The message object to display.
-         * @param {boolean} [shouldScroll=true] - Whether to scroll to the bottom after displaying.
-         */
         function displayMessage(messageObj, shouldScroll = true) {
             const chatWindow = document.getElementById('chat-window');
             const messageElement = document.createElement('div');
             messageElement.className = `message ${messageObj.sender === userId ? 'self' : 'other'}`;
-            // Add data-file-id for updating progress messages
             if (messageObj.fileId) {
                 messageElement.dataset.fileId = messageObj.fileId;
             }
-
 
             const senderName = messageObj.sender === userId ? 'You' : `User ${messageObj.sender.substring(0, 8)}...`;
             const timestamp = new Date(messageObj.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             if (messageObj.isFile) {
-                // If it's a file, content is a Blob URL for chunked files
                 const fileIcon = `
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 inline-block mr-1">
                         <path d="M18.97 3.659A2.25 2.25 0 0017.023 2.25h-13.5A2.25 2.25 0 001.25 4.5v11.25c0 1.036.724 1.897 1.702 2.131a.75.75 0 00.584.076l7.497-1.5a.75.75 0 00.427-.715V6.25a.75.75 0 01.75-.75h2.25a.75.75 0 01.75.75v6.19l1.777.355a.75.75 0 00.584-.076c.978-.234 1.702-1.095 1.702-2.131V4.5A2.25 2.25 0 0018.97 3.659z" />
@@ -1189,16 +1008,13 @@
                     </div>
                     <span class="message-timestamp">${timestamp}</span>
                 `;
-                // Revoke object URL after download to free memory if it's a blob URL
                 if (typeof messageObj.content === 'string' && messageObj.content.startsWith('blob:')) {
                     messageElement.querySelector('a').addEventListener('click', () => {
-                        // Small delay to allow browser to start download before revoking
                         setTimeout(() => URL.revokeObjectURL(messageObj.content), 100);
                     });
                 }
 
             } else {
-                // Regular text message or file transfer status message
                 messageElement.innerHTML = `
                     <div class="message-sender">${senderName}</div>
                     <div class="message-content">${messageObj.content}</div>
@@ -1212,29 +1028,20 @@
             }
         }
 
-
         // --- Local Storage Management ---
-
-        /**
-         * Generates a persistent user ID or retrieves an existing one.
-         */
         function getOrCreateUserId() {
-            let id = localStorage.getItem('thePlatformUserId'); // Corrected key
+            let id = localStorage.getItem('thePlatformUserId');
             if (!id) {
                 id = crypto.randomUUID();
-                localStorage.setItem('thePlatformUserId', id); // Corrected key
+                localStorage.setItem('thePlatformUserId', id);
             }
             document.getElementById('current-user-id').textContent = id;
             return id;
         }
 
-        /**
-         * Saves all vault data to local storage.
-         */
         async function saveVaultsToLocalStorage() {
             const vaultsToStore = [];
             for (const [vaultId, vault] of vaults.entries()) {
-                // Export the CryptoKey to a storable format (raw ArrayBuffer, then Base64)
                 let exportedKeyB64 = '';
                 if (vault.key) {
                     try {
@@ -1242,7 +1049,6 @@
                         exportedKeyB64 = btoa(String.fromCharCode(...new Uint8Array(exportedKey)));
                     } catch (e) {
                         console.error('Failed to export key for saving:', e);
-                        // Handle error, maybe don't save this vault or store a flag
                     }
                 }
 
@@ -1251,31 +1057,22 @@
                     name: vault.name,
                     type: vault.type,
                     expiration: vault.expiration,
-                    exportedKeyB64: exportedKeyB64, // Store exported key
-                    // Ensure messages are stored correctly. Blob URLs cannot be directly stored.
-                    // For files, we store the URL and filename. On reload, the URL will be invalid.
-                    // A real app would need to re-download or store files in IndexedDB.
+                    exportedKeyB64: exportedKeyB64,
                     messages: vault.messages.map(msg => {
                         if (msg.isFile && typeof msg.content === 'string' && msg.content.startsWith('blob:')) {
-                            // For blob URLs, just store metadata, not the URL itself.
-                            // The actual file content would need to be re-fetched or stored persistently (e.g., IndexedDB).
-                            // For this demo, we'll store a placeholder or just the filename for display.
-                            return { ...msg, content: `[File: ${msg.fileName}]` }; // Placeholder for stored blob URLs
+                            return { ...msg, content: `[File: ${msg.fileName}]` };
                         }
                         return msg;
                     })
                 });
             }
-            localStorage.setItem('thePlatformVaults', JSON.stringify(vaultsToStore)); // Corrected key
+            localStorage.setItem('thePlatformVaults', JSON.stringify(vaultsToStore));
             console.log('Vaults saved to local storage.');
         }
 
-        /**
-         * Loads vault data from local storage.
-         */
         async function loadVaultsFromLocalStorage() {
-            const storedVaults = JSON.parse(localStorage.getItem('thePlatformVaults') || '[]'); // Corrected key
-            vaults.clear(); // Clear current in-memory vaults
+            const storedVaults = JSON.parse(localStorage.getItem('thePlatformVaults') || '[]');
+            vaults.clear();
 
             for (const storedVault of storedVaults) {
                 let importedKey = null;
@@ -1294,7 +1091,7 @@
                     name: storedVault.name,
                     type: storedVault.type,
                     expiration: storedVault.expiration,
-                    key: importedKey, // Set the imported key
+                    key: importedKey,
                     messages: storedVault.messages || []
                 });
             }
@@ -1302,9 +1099,6 @@
             console.log('Vaults loaded from local storage.');
         }
 
-        /**
-         * Clears all local storage data related to the app.
-         */
         function nukeAllData() {
             showMessageBox('Confirm Nuke', 'Are you sure you want to wipe ALL your local data and disconnect? This action cannot be undone. This will also attempt to clear your data on the server.', async () => {
                 localStorage.removeItem('thePlatformVaults');
@@ -1319,10 +1113,8 @@
                 document.getElementById('no-vault-selected').classList.remove('hidden');
                 document.getElementById('current-user-id').textContent = 'Nuked! Reopen for new ID.';
 
-                // Inform server to remove user's data
                 sendMessageToServer({ type: 'nuke', userId: userId });
 
-                // Simulate closing the page by clearing content and displaying a message
                 document.body.innerHTML = `
                     <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-gray-700">
                         <h1 class="text-4xl font-bold mb-4">Data Nuked!</h1>
@@ -1333,9 +1125,7 @@
             });
         }
 
-
         // --- Event Listeners and Initial Setup ---
-
         document.addEventListener('DOMContentLoaded', async () => {
             userId = getOrCreateUserId();
             initWebSocket();
@@ -1364,21 +1154,17 @@
                     return;
                 }
 
-                // Generate a fresh AES key for the new vault
-                const vaultAesKey = await generateAesKey();
-                const rawVaultKey = await exportKey(vaultAesKey); // Export to raw bytes
-
-                // Generate a salt for PBKDF2
-                const salt = crypto.getRandomValues(new Uint8Array(16)); // 16 bytes for salt
-
-                // Use a temporary hash (e.g., UUID) for the vault until the server returns the actual hash
-                // This temporary hash will be used to derive a key to encrypt the vault's AES key
-                // which will then be sent to the server. The server will generate a permanent hash.
-                const tempVaultHash = crypto.randomUUID(); // This is just a placeholder for the client-side derivation
+                // Create enhanced vault with Kyber keys
+                const { kyberPublicKey, kyberPrivateKey, vaultAesKey } = await createEnhancedVault(vaultName, vaultType);
+                const rawVaultKey = await exportKey(vaultAesKey);
+                const salt = crypto.getRandomValues(new Uint8Array(16));
+                const tempVaultHash = crypto.randomUUID();
                 const derivedKeyForVaultKeyEncryption = await deriveKeyFromHash(tempVaultHash, salt);
-
-                // Encrypt the vault's AES key using the derived key
                 const { encryptedData: encryptedVaultKey, iv: vaultKeyIv } = await encryptData(rawVaultKey, derivedKeyForVaultKeyEncryption);
+
+                // Convert Kyber keys to base64 for transmission
+                const publicKeyB64 = btoa(String.fromCharCode(...kyberPublicKey));
+                const privateKeyB64 = btoa(String.fromCharCode(...kyberPrivateKey));
 
                 sendMessageToServer({
                     type: 'create_vault',
@@ -1386,6 +1172,8 @@
                     vaultName: vaultName,
                     vaultType: vaultType,
                     expiration: expirationTime,
+                    kyberPublicKey: publicKeyB64,
+                    kyberPrivateKey: privateKeyB64,
                     encryptedKeyB64: btoa(String.fromCharCode(...new Uint8Array(encryptedVaultKey))),
                     ivB64: btoa(String.fromCharCode(...vaultKeyIv)),
                     saltB64: btoa(String.fromCharCode(...salt))
@@ -1418,11 +1206,10 @@
                     return;
                 }
 
+                // Request vault public key from server
                 sendMessageToServer({
-                    type: 'join_vault',
-                    joinerId: userId,
-                    vaultHash: joinVaultHash,
-                    vaultName: joinVaultName
+                    type: 'get_vault_public_key',
+                    vaultHash: joinVaultHash
                 });
 
                 joinVaultModal.classList.remove('show');
@@ -1453,12 +1240,10 @@
                 }
 
                 if (selectedFile) {
-                    // Handle file sending via chunking
                     await sendFileInChunks(selectedFile, activeVaultId);
-                    fileInput.value = ''; // Clear file input
-                    messageInput.value = ''; // Clear message input if text was also typed
+                    fileInput.value = '';
+                    messageInput.value = '';
                 } else if (messageContent) {
-                    // Handle text message sending
                     const localMessageObj = {
                         sender: userId,
                         content: messageContent,
@@ -1466,12 +1251,10 @@
                         isFile: false
                     };
 
-                    // Display the message locally right away
                     vault.messages.push(localMessageObj);
-                    displayMessage(localMessageObj); // Display immediately
-                    await saveVaultsToLocalStorage(); // Ensure local storage is updated
+                    displayMessage(localMessageObj);
+                    await saveVaultsToLocalStorage();
 
-                    // Encrypt and send the text message to the server
                     const { encryptedMessage, iv } = await encryptMessage(messageContent, vault.key);
                     sendMessageToServer({
                         type: 'send_message',
@@ -1479,12 +1262,12 @@
                         senderId: userId,
                         encryptedMessage: encryptedMessage,
                         iv: iv,
-                        timestamp: localMessageObj.timestamp, // Use the same timestamp
+                        timestamp: localMessageObj.timestamp,
                         isFile: false,
                         fileName: null,
                         fileMimeType: null
                     });
-                    messageInput.value = ''; // Clear input field
+                    messageInput.value = '';
                 }
             });
 
@@ -1494,9 +1277,9 @@
             });
 
             // Nuke Button
-            document.getElementById('nuke-btn').addEventListener('click', nukeAllData); // Call nukeAllData directly as it has its own confirmation
+            document.getElementById('nuke-btn').addEventListener('click', nukeAllData);
 
-            // Handle Enter key for sending messages
+            // Handle Enter key
             document.getElementById('message-input').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     document.getElementById('send-message-btn').click();
