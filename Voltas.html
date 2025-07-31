@@ -7,8 +7,8 @@
     <!-- Tailwind CSS CDN for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Kyber post-quantum cryptography library -->
-    <script src="https://cdn.jsdelivr.net/npm/crystals-kyber@1.1.1/dist/crystals-kyber.min.js"></script>
+    <!-- Kyber Post-Quantum Cryptography Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@pqcrypto/kyber768@1.0.0/dist/kyber768.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -411,7 +411,7 @@
     </div>
     <footer class="footer">
         <!-- New Footer Text -->
-        <p>Encrypted by The Laughing Buddha Protocol with Kyber Post-Quantum Cryptography</p>
+        <p>Encrypted by The Laughing Buddha Protocol</p>
         <p>a Prakhar Solanki creation</p>
         <p>&copy;2025-The Platform.</p>
     </footer>
@@ -422,7 +422,147 @@
         let activeVaultId = null;
         const vaults = new Map(); // Stores vaultId -> { name, type, key, iv, messages: [] }
         // IMPORTANT: Update this to your Render WebSocket URL
-        const SERVER_URL = 'wss://server-618i.onrender.com';
+        // Example: 'wss://your-app-name.onrender.com'
+        const SERVER_URL = 'wss://server-618i.onrender.com'; // **UPDATE THIS LINE WITH YOUR RENDER URL**
+        
+        // --- Kyber Post-Quantum Cryptography Functions ---
+        /**
+         * Generates a Kyber keypair from a deterministic seed (vault hash)
+         * @param {string} vaultHash - The vault hash used as seed
+         * @returns {Promise<{publicKey: Uint8Array, secretKey: Uint8Array}>} Kyber keypair
+         */
+        async function generateKyberKeypairFromHash(vaultHash) {
+            // Convert vault hash to seed (32 bytes for Kyber)
+            const seed = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(vaultHash));
+            const seedArray = new Uint8Array(seed);
+            
+            // Generate deterministic Kyber keypair
+            const keypair = kyber768.keygen(seedArray);
+            return {
+                publicKey: keypair.publicKey,
+                secretKey: keypair.secretKey
+            };
+        }
+        
+        /**
+         * Encapsulates with Kyber public key to get shared secret and ciphertext
+         * @param {Uint8Array} publicKey - The Kyber public key
+         * @returns {{ciphertext: Uint8Array, sharedSecret: Uint8Array}}
+         */
+        function kyberEncapsulate(publicKey) {
+            return kyber768.encapsulate(publicKey);
+        }
+        
+        /**
+         * Decapsulates Kyber ciphertext to get shared secret
+         * @param {Uint8Array} ciphertext - The Kyber ciphertext
+         * @param {Uint8Array} secretKey - The Kyber secret key
+         * @returns {Uint8Array} The shared secret
+         */
+        function kyberDecapsulate(ciphertext, secretKey) {
+            return kyber768.decapsulate(ciphertext, secretKey);
+        }
+        
+        /**
+         * Encrypts data using AES-GCM with a key derived from Kyber shared secret
+         * @param {ArrayBuffer} data - The data to encrypt
+         * @param {Uint8Array} sharedSecret - The Kyber shared secret
+         * @returns {Promise<{encryptedData: ArrayBuffer, iv: Uint8Array}>}
+         */
+        async function encryptDataWithKyber(data, sharedSecret) {
+            // Derive AES key from Kyber shared secret
+            const keyMaterial = await crypto.subtle.importKey(
+                "raw",
+                sharedSecret,
+                { name: "HKDF" },
+                false,
+                ["deriveKey"]
+            );
+            
+            const aesKey = await crypto.subtle.deriveKey(
+                {
+                    name: "HKDF",
+                    hash: "SHA-256",
+                    salt: new Uint8Array(16),
+                    info: new TextEncoder().encode("KyberVaultKey")
+                },
+                keyMaterial,
+                { name: "AES-GCM", length: 256 },
+                true,
+                ["encrypt", "decrypt"]
+            );
+            
+            // Encrypt data with derived AES key
+            const iv = crypto.getRandomValues(new Uint8Array(12)); // 96-bit IV for AES-GCM
+            const encryptedData = await crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv },
+                aesKey,
+                data
+            );
+            
+            return { encryptedData, iv };
+        }
+        
+        /**
+         * Decrypts data using AES-GCM with a key derived from Kyber shared secret
+         * @param {ArrayBuffer} encryptedData - The encrypted data
+         * @param {Uint8Array} iv - The IV used for encryption
+         * @param {Uint8Array} sharedSecret - The Kyber shared secret
+         * @returns {Promise<ArrayBuffer>} The decrypted data
+         */
+        async function decryptDataWithKyber(encryptedData, iv, sharedSecret) {
+            // Derive AES key from Kyber shared secret
+            const keyMaterial = await crypto.subtle.importKey(
+                "raw",
+                sharedSecret,
+                { name: "HKDF" },
+                false,
+                ["deriveKey"]
+            );
+            
+            const aesKey = await crypto.subtle.deriveKey(
+                {
+                    name: "HKDF",
+                    hash: "SHA-256",
+                    salt: new Uint8Array(16),
+                    info: new TextEncoder().encode("KyberVaultKey")
+                },
+                keyMaterial,
+                { name: "AES-GCM", length: 256 },
+                true,
+                ["encrypt", "decrypt"]
+            );
+            
+            // Decrypt data with derived AES key
+            return crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: iv },
+                aesKey,
+                encryptedData
+            );
+        }
+        
+        /**
+         * Encrypts a vault key using Kyber shared secret
+         * @param {CryptoKey} vaultKey - The vault AES key
+         * @param {Uint8Array} sharedSecret - The Kyber shared secret
+         * @returns {Promise<{encryptedData: ArrayBuffer, iv: Uint8Array}>}
+         */
+        async function encryptVaultKeyWithKyber(vaultKey, sharedSecret) {
+            const rawVaultKey = await exportKey(vaultKey);
+            return encryptDataWithKyber(rawVaultKey, sharedSecret);
+        }
+        
+        /**
+         * Decrypts a vault key using Kyber shared secret
+         * @param {ArrayBuffer} encryptedData - The encrypted vault key
+         * @param {Uint8Array} iv - Initialization vector
+         * @param {Uint8Array} sharedSecret - The Kyber shared secret
+         * @returns {Promise<CryptoKey>}
+         */
+        async function decryptVaultKeyWithKyber(encryptedData, iv, sharedSecret) {
+            const decryptedKey = await decryptDataWithKyber(encryptedData, iv, sharedSecret);
+            return importKey(decryptedKey);
+        }
         
         // --- Utility Functions ---
         /**
@@ -449,7 +589,6 @@
             okBtn.addEventListener('click', okHandler);
             closeBtn.addEventListener('click', closeHandler);
         }
-        
         /**
          * Copies text to the clipboard.
          * @param {string} text - The text to copy.
@@ -468,7 +607,6 @@
             }
             document.body.removeChild(textarea);
         }
-        
         /**
          * Converts a File object to a Base64 string.
          * @param {File} file - The file to convert.
@@ -482,7 +620,6 @@
                 reader.readAsDataURL(file);
             });
         }
-        
         /**
          * Converts a Base64 string back to a Blob.
          * @param {string} base64 - The Base64 string.
@@ -498,7 +635,6 @@
             }
             return new Blob([ab], { type: mimeType });
         }
-        
         /**
          * Downloads a file from Base64 data.
          * @param {string} base64Data - The Base64 encoded file data.
@@ -516,39 +652,6 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
-        
-        // --- Post-Quantum Cryptography (Kyber) ---
-        /**
-         * Encrypts the vault key using Kyber (CRYSTALS-Kyber, NIST FIPS 203 standard)
-         * @param {ArrayBuffer} rawVaultKey - The raw vault key to encrypt
-         * @returns {Object} Contains publicKey, sharedSecret, and ciphertext
-         */
-        async function kyberEncrypt(rawVaultKey) {
-            // Generate Kyber keypair (Kyber768 provides 128 bits of security)
-            const { publicKey, secretKey } = kyber.keygen();
-            
-            // Encapsulate to get shared secret and ciphertext
-            const { sharedSecret, ciphertext } = kyber.encaps(publicKey);
-            
-            // Return the necessary components
-            return {
-                publicKey: publicKey,
-                secretKey: secretKey,
-                sharedSecret: sharedSecret,
-                ciphertext: ciphertext
-            };
-        }
-        
-        /**
-         * Decrypts the vault key using Kyber
-         * @param {Uint8Array} secretKey - The Kyber secret key
-         * @param {Uint8Array} ciphertext - The Kyber ciphertext
-         * @returns {Uint8Array} The shared secret
-         */
-        function kyberDecrypt(secretKey, ciphertext) {
-            return kyber.decaps(secretKey, ciphertext);
-        }
-        
         // --- Cryptography (The Laughing Buddha Protocol) ---
         /**
          * Generates a random AES-GCM key.
@@ -557,13 +660,13 @@
         async function generateAesKey() {
             return crypto.subtle.generateKey(
                 { name: "AES-GCM", length: 256 },
-                true,
+                true, // extractable
                 ["encrypt", "decrypt"]
             );
         }
-        
         /**
          * Derives a cryptographic key from a given password (hash) using PBKDF2.
+         * This is used to encrypt/decrypt the vault's main AES key.
          * @param {string} password - The vault hash (password).
          * @param {Uint8Array} salt - A unique salt for key derivation.
          * @returns {Promise<CryptoKey>} The derived key.
@@ -581,16 +684,15 @@
                 {
                     name: "PBKDF2",
                     salt: salt,
-                    iterations: 100000,
+                    iterations: 100000, // High iterations for security
                     hash: "SHA-256",
                 },
                 keyMaterial,
                 { name: "AES-GCM", length: 256 },
-                true,
+                true, // extractable
                 ["encrypt", "decrypt"]
             );
         }
-        
         /**
          * Encrypts data using AES-GCM.
          * @param {ArrayBuffer} data - The data to encrypt.
@@ -598,7 +700,7 @@
          * @returns {Promise<{encryptedData: ArrayBuffer, iv: Uint8Array}>} Encrypted data and IV.
          */
         async function encryptData(data, key) {
-            const iv = crypto.getRandomValues(new Uint8Array(16));
+            const iv = crypto.getRandomValues(new Uint8Array(16)); // 96-bit IV recommended for AES-GCM
             const encryptedData = await crypto.subtle.encrypt(
                 { name: "AES-GCM", iv: iv },
                 key,
@@ -606,7 +708,6 @@
             );
             return { encryptedData, iv };
         }
-        
         /**
          * Decrypts data using AES-GCM.
          * @param {ArrayBuffer} encryptedData - The encrypted data.
@@ -626,7 +727,6 @@
                 throw new Error("Decryption failed. Key or data might be corrupted.");
             }
         }
-        
         /**
          * Exports a CryptoKey to a raw ArrayBuffer.
          * @param {CryptoKey} key - The key to export.
@@ -635,7 +735,6 @@
         async function exportKey(key) {
             return crypto.subtle.exportKey("raw", key);
         }
-        
         /**
          * Imports a raw ArrayBuffer into a CryptoKey.
          * @param {ArrayBuffer} rawKey - The raw key data.
@@ -650,7 +749,6 @@
                 ["encrypt", "decrypt"]
             );
         }
-        
         /**
          * Encrypts a string message.
          * @param {string} message - The message string.
@@ -666,7 +764,6 @@
                 iv: btoa(String.fromCharCode(...iv))
             };
         }
-        
         /**
          * Decrypts a string message.
          * @param {string} encryptedMessageB64 - Base64 encoded encrypted message.
@@ -686,7 +783,6 @@
                 return "[Could not decrypt message]";
             }
         }
-        
         // --- WebSocket Communication ---
         /**
          * Initializes the WebSocket connection.
@@ -699,7 +795,10 @@
             ws = new WebSocket(SERVER_URL);
             ws.onopen = async () => {
                 console.log('WebSocket connected.');
+                // Send user ID to server upon connection
                 ws.send(JSON.stringify({ type: 'register', userId: userId }));
+                // Load vaults from local storage AFTER registering with the server
+                // This ensures we have our ID before trying to retrieve offline messages
                 await loadVaultsFromLocalStorage();
             };
             ws.onmessage = async (event) => {
@@ -714,7 +813,8 @@
                 console.log('Received:', data);
                 switch (data.type) {
                     case 'vault_created':
-                        const { vaultId, vaultHash, vaultName, vaultType, expiration, encryptedKeyB64, ivB64, saltB64, kyberDataB64, kyberIvB64 } = data;
+                        // Server sends back the hash and encrypted key for the creator
+                        const { vaultId, vaultHash, vaultName, vaultType, expiration, encryptedKeyB64, ivB64, saltB64 } = data;
                         const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
                         const derivedKeyForVaultKey = await deriveKeyFromHash(vaultHash, salt);
                         const decryptedVaultKeyRaw = await decryptData(
@@ -731,15 +831,45 @@
                             key: vaultAesKey,
                             messages: []
                         });
-                        await saveVaultsToLocalStorage();
+                        await saveVaultsToLocalStorage(); // Await saving
                         renderVaultList();
                         document.getElementById('generated-vault-hash').textContent = vaultHash;
                         document.getElementById('create-vault-hash-display').classList.remove('hidden');
                         showMessageBox('Vault Created!', `Your vault "${vaultName}" has been created. Share this hash: ${vaultHash}`, () => {
+                            // Automatically select the new vault after creation
                             selectVault(vaultId);
                         });
                         break;
+                        
+                    case 'private_vault_created':
+                        // Handle private vault creation (Kyber)
+                        const { vaultId: privateVaultId, vaultHash: privateVaultHash, vaultName: privateVaultName, expiration: privateExpiration } = data;
+                        
+                        // Generate Kyber keypair from vault hash
+                        const { secretKey } = await generateKyberKeypairFromHash(privateVaultHash);
+                        
+                        // Store vault with secret key (for later decapsulation)
+                        vaults.set(privateVaultId, {
+                            id: privateVaultId,
+                            name: privateVaultName,
+                            type: 'private',
+                            expiration: privateExpiration,
+                            vaultHash: privateVaultHash,
+                            kyberSecretKey: secretKey,
+                            messages: []
+                        });
+                        
+                        await saveVaultsToLocalStorage();
+                        renderVaultList();
+                        document.getElementById('generated-vault-hash').textContent = privateVaultHash;
+                        document.getElementById('create-vault-hash-display').classList.remove('hidden');
+                        showMessageBox('Vault Created!', `Your private vault "${privateVaultName}" has been created. Share this hash: ${privateVaultHash}`, () => {
+                            selectVault(privateVaultId);
+                        });
+                        break;
+                        
                     case 'vault_joined':
+                        // Server sends back the encrypted key for the joiner
                         const { joinedVaultId, joinedVaultName, joinedVaultType, joinedExpiration, encryptedKeyB64: joinedEncryptedKeyB64, ivB64: joinedIvB64, saltB64: joinedSaltB64, vaultHash: joinHashUsed } = data;
                         const joinSalt = Uint8Array.from(atob(joinedSaltB64), c => c.charCodeAt(0));
                         const derivedKeyForJoinedVaultKey = await deriveKeyFromHash(joinHashUsed, joinSalt);
@@ -757,12 +887,92 @@
                             key: joinedVaultAesKey,
                             messages: []
                         });
-                        await saveVaultsToLocalStorage();
+                        await saveVaultsToLocalStorage(); // Await saving
                         renderVaultList();
                         showMessageBox('Vault Joined!', `You have joined "${joinedVaultName}".`, () => {
                             selectVault(joinedVaultId);
                         });
                         break;
+                        
+                    case 'private_vault_public_key':
+                        try {
+                            // Get vault hash from join form
+                            const vaultHash = document.getElementById('join-vault-hash').value;
+                            
+                            // Generate Kyber keypair from vault hash
+                            const { publicKey, secretKey } = await generateKyberKeypairFromHash(vaultHash);
+                            
+                            // Encapsulate to get shared secret
+                            const publicKeyBuffer = Uint8Array.from(atob(data.publicKey), c => c.charCodeAt(0));
+                            const { ciphertext, sharedSecret } = kyberEncapsulate(publicKeyBuffer);
+                            
+                            // Generate vault AES key
+                            const vaultAesKey = await generateAesKey();
+                            
+                            // Encrypt vault key with shared secret
+                            const { encryptedData, iv } = await encryptVaultKeyWithKyber(vaultAesKey, sharedSecret);
+                            
+                            // Send to server
+                            sendMessageToServer({
+                                type: 'submit_private_vault_key',
+                                userId: userId,
+                                vaultId: data.vaultId,
+                                ciphertext: btoa(String.fromCharCode(...ciphertext)),
+                                encryptedVaultKey: btoa(String.fromCharCode(...encryptedData)),
+                                iv: btoa(String.fromCharCode(...iv))
+                            });
+                            
+                            // Temporarily store vault (will be confirmed when creator responds)
+                            vaults.set(data.vaultId, {
+                                id: data.vaultId,
+                                name: data.vaultName,
+                                type: 'private',
+                                expiration: data.expiration,
+                                kyberSecretKey: secretKey,
+                                messages: []
+                            });
+                            
+                            await saveVaultsToLocalStorage();
+                            renderVaultList();
+                            showMessageBox('Vault Joined!', `You have joined "${data.vaultName}".`, () => {
+                                selectVault(data.vaultId);
+                            });
+                        } catch (e) {
+                            console.error("Error during private vault join:", e);
+                            showMessageBox('Error', 'Failed to join private vault. Please try again.');
+                        }
+                        break;
+                        
+                    case 'private_vault_key':
+                        try {
+                            const vault = vaults.get(data.vaultId);
+                            if (vault && vault.kyberSecretKey) {
+                                // Decapsulate to get shared secret
+                                const ciphertext = Uint8Array.from(atob(data.ciphertext), c => c.charCodeAt(0));
+                                const sharedSecret = kyberDecapsulate(ciphertext, vault.kyberSecretKey);
+                                
+                                // Decrypt vault key
+                                const encryptedVaultKey = Uint8Array.from(atob(data.encryptedVaultKey), c => c.charCodeAt(0));
+                                const iv = Uint8Array.from(atob(data.iv), c => c.charCodeAt(0));
+                                const vaultAesKey = await decryptVaultKeyWithKyber(encryptedVaultKey, iv, sharedSecret);
+                                
+                                // Update vault with proper key
+                                vaults.set(data.vaultId, {
+                                    ...vault,
+                                    key: vaultAesKey,
+                                    kyberSecretKey: null // Clear sensitive key
+                                });
+                                
+                                await saveVaultsToLocalStorage();
+                                if (activeVaultId === data.vaultId) {
+                                    renderChatMessages(data.vaultId);
+                                }
+                            }
+                        } catch (e) {
+                            console.error("Error processing private vault key:", e);
+                        }
+                        break;
+                        
                     case 'new_message':
                         const { vaultId: msgVaultId, senderId, encryptedMessage, iv, timestamp, isFile, fileName, fileMimeType } = data;
                         const vault = vaults.get(msgVaultId);
@@ -779,20 +989,21 @@
                                 };
                                 vault.messages.push(messageObj);
                                 console.log(`New message for vault ${msgVaultId}:`, messageObj);
-                                await saveVaultsToLocalStorage();
+                                await saveVaultsToLocalStorage(); // Await saving
                                 if (activeVaultId === msgVaultId) {
                                     displayMessage(messageObj);
                                 }
                             } catch (e) {
                                 console.error("Failed to decrypt incoming message:", e);
+                                // Display a placeholder or error message if decryption fails
                                 const messageObj = {
                                     sender: senderId,
                                     content: "[Could not decrypt message]",
                                     timestamp: timestamp,
-                                    isFile: false
+                                    isFile: false // Assume not a file if decryption failed
                                 };
                                 vault.messages.push(messageObj);
-                                await saveVaultsToLocalStorage();
+                                await saveVaultsToLocalStorage(); // Await saving
                                 if (activeVaultId === msgVaultId) {
                                     displayMessage(messageObj);
                                 }
@@ -832,7 +1043,8 @@
                                 console.warn(`Received offline message for unknown vault ID: ${msgVaultId}. Message:`, msg);
                             }
                         }
-                        await saveVaultsToLocalStorage();
+                        await saveVaultsToLocalStorage(); // Await saving
+                        // Re-render chat for the active vault if new offline messages were added to it
                         if (activeVaultId && vaults.has(activeVaultId)) {
                             renderChatMessages(activeVaultId);
                         }
@@ -844,7 +1056,7 @@
                         const { expiredVaultId, expiredVaultName } = data;
                         if (vaults.has(expiredVaultId)) {
                              vaults.delete(expiredVaultId);
-                             await saveVaultsToLocalStorage();
+                             await saveVaultsToLocalStorage(); // Await saving after deletion
                              renderVaultList();
                              if (activeVaultId === expiredVaultId) {
                                  activeVaultId = null;
@@ -861,6 +1073,7 @@
             };
             ws.onclose = () => {
                 console.log('WebSocket disconnected. Attempting to reconnect in 5 seconds...');
+                // Consider adding a visual indicator for disconnection
                 setTimeout(initWebSocket, 5000);
             };
             ws.onerror = (event) => {
@@ -873,7 +1086,6 @@
                     3. If deployed (e.g., to Render), use 'wss://' for the SERVER_URL.`);
             };
         }
-        
         /**
          * Sends a message to the WebSocket server.
          * @param {object} message - The message object to send.
@@ -886,27 +1098,38 @@
                 console.warn("Attempted to send message while WebSocket is not open.", message);
             }
         }
-        
         // --- Local Storage Management ---
         /**
          * Saves all vaults data to localStorage.
+         * Note: CryptoKey objects cannot be directly stored. We export them to raw ArrayBuffer (Base64)
+         * and re-import them when loading.
          */
         async function saveVaultsToLocalStorage() {
             console.log("Saving vaults to localStorage...");
             const serializableVaults = [];
             for (const [id, vault] of vaults.entries()) {
                 try {
-                    const exportedKey = await exportKey(vault.key);
+                    let keyData;
+                    if (vault.key) {
+                        const exportedKey = await exportKey(vault.key);
+                        keyData = btoa(String.fromCharCode(...new Uint8Array(exportedKey)));
+                    } else {
+                        keyData = null;
+                    }
+                    
                     serializableVaults.push({
                         id: vault.id,
                         name: vault.name,
                         type: vault.type,
                         expiration: vault.expiration,
-                        key: btoa(String.fromCharCode(...new Uint8Array(exportedKey))),
-                        messages: vault.messages || []
+                        key: keyData,
+                        vaultHash: vault.vaultHash,
+                        kyberSecretKey: vault.kyberSecretKey ? btoa(String.fromCharCode(...vault.kyberSecretKey)) : null,
+                        messages: vault.messages // Messages are already serializable
                     });
                 } catch (e) {
                     console.error(`Failed to export key for vault ${id}:`, e);
+                    // Optionally, remove this vault from the list to be saved if its key is corrupted
                 }
             }
             try {
@@ -917,41 +1140,48 @@
                 showMessageBox('Storage Error', 'Could not save data to local storage. Your browser might be full or private browsing is enabled.');
             }
         }
-        
         /**
          * Loads vaults data from localStorage.
          */
         async function loadVaultsFromLocalStorage() {
             console.log("Loading vaults from localStorage...");
             const storedVaults = localStorage.getItem('thePlatformVaults');
-            vaults.clear();
+            vaults.clear(); // Clear existing vaults before loading
             if (storedVaults) {
                 try {
                     const parsedVaults = JSON.parse(storedVaults);
                     for (const serializedVault of parsedVaults) {
                         try {
-                            const importedKey = await importKey(Uint8Array.from(atob(serializedVault.key), c => c.charCodeAt(0)));
+                            let key = null;
+                            if (serializedVault.key) {
+                                key = await importKey(Uint8Array.from(atob(serializedVault.key), c => c.charCodeAt(0)));
+                            }
+                            
                             vaults.set(serializedVault.id, {
                                 id: serializedVault.id,
                                 name: serializedVault.name,
                                 type: serializedVault.type,
                                 expiration: serializedVault.expiration,
-                                key: importedKey,
+                                key: key,
+                                vaultHash: serializedVault.vaultHash,
+                                kyberSecretKey: serializedVault.kyberSecretKey ? Uint8Array.from(atob(serializedVault.kyberSecretKey), c => c.charCodeAt(0)) : null,
                                 messages: serializedVault.messages || []
                             });
                             console.log(`Loaded vault: ${serializedVault.name} (${serializedVault.id})`);
                         } catch (e) {
                             console.error(`Failed to load vault ${serializedVault.id} from localStorage (key import failed):`, e);
+                            // This vault might be corrupted or key unimportable, skip it.
                         }
                     }
                     console.log(`Finished loading ${vaults.size} vaults from localStorage.`);
                     renderVaultList();
+                    // If there are vaults, select the first one by default or previously active
                     if (vaults.size > 0) {
                         const lastActiveVaultId = localStorage.getItem('lastActiveVaultId');
                         if (lastActiveVaultId && vaults.has(lastActiveVaultId)) {
                             selectVault(lastActiveVaultId);
                         } else {
-                            selectVault(vaults.keys().next().value);
+                            selectVault(vaults.keys().next().value); // Select the first available vault
                         }
                     } else {
                         console.log("No vaults found in localStorage.");
@@ -962,14 +1192,14 @@
                 } catch (e) {
                     console.error("Error parsing vaults from localStorage:", e);
                     showMessageBox('Data Corruption', 'Local vault data is corrupted. Clearing data and starting fresh.');
-                    localStorage.removeItem('thePlatformVaults');
+                    localStorage.removeItem('thePlatformVaults'); // Clear corrupted data
+                    // Reload the page or simply continue with empty vaults
                     renderVaultList();
                 }
             } else {
                 console.log("No vaults found in localStorage initially.");
             }
         }
-        
         /**
          * Clears all local data (vaults, messages, user ID).
          */
@@ -986,7 +1216,9 @@
                 document.getElementById('chat-input-area').classList.add('hidden');
                 document.getElementById('no-vault-selected').classList.remove('hidden');
                 document.getElementById('current-user-id').textContent = 'Nuked! Reopen for new ID.';
+                // Inform server to remove user's data
                 sendMessageToServer({ type: 'nuke', userId: userId });
+                // Simulate closing the page by clearing content and displaying a message
                 document.body.innerHTML = `
                     <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-gray-700">
                         <h1 class="text-4xl font-bold mb-4">Data Nuked!</h1>
@@ -996,7 +1228,6 @@
                 `;
             });
         }
-        
         // --- UI Rendering ---
         /**
          * Renders the list of vaults in the sidebar.
@@ -1019,7 +1250,6 @@
                 vaultListDiv.appendChild(vaultItem);
             });
         }
-        
         /**
          * Displays a single message in the chat window.
          * @param {object} message - The message object.
@@ -1054,24 +1284,23 @@
             timestampSpan.textContent = new Date(message.timestamp).toLocaleTimeString();
             messageDiv.appendChild(timestampSpan);
             chatWindow.appendChild(messageDiv);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
+            chatWindow.scrollTop = chatWindow.scrollHeight; // Scroll to bottom
         }
-        
         /**
          * Renders all messages for the currently selected vault.
          * @param {string} vaultId - The ID of the vault whose messages to render.
          */
         function renderChatMessages(vaultId) {
             const chatWindow = document.getElementById('chat-window');
-            chatWindow.innerHTML = '';
+            chatWindow.innerHTML = ''; // Clear previous messages
             const vault = vaults.get(vaultId);
             if (vault && vault.messages) {
+                // Sort messages by timestamp to ensure correct order
                 vault.messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
                 vault.messages.forEach(msg => displayMessage(msg));
             }
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
-        
         /**
          * Selects a vault and displays its chat.
          * @param {string} vaultId - The ID of the vault to select.
@@ -1084,12 +1313,12 @@
                 document.getElementById('no-vault-selected').classList.remove('hidden');
                 document.getElementById('chat-window').classList.add('hidden');
                 document.getElementById('chat-input-area').classList.add('hidden');
-                renderVaultList();
+                renderVaultList(); // Re-render to ensure no vault is marked active
                 return;
             }
             activeVaultId = vaultId;
-            localStorage.setItem('lastActiveVaultId', vaultId);
-            renderVaultList();
+            localStorage.setItem('lastActiveVaultId', vaultId); // Using localStorage for persistence
+            renderVaultList(); // Update active class
             document.getElementById('no-vault-selected').classList.add('hidden');
             document.getElementById('chat-window').classList.remove('hidden');
             document.getElementById('chat-input-area').classList.remove('hidden');
@@ -1097,20 +1326,19 @@
             document.getElementById('message-input').focus();
             console.log(`Selected vault: ${vaults.get(vaultId).name} (${vaultId})`);
         }
-        
         // --- Event Listeners and Initial Setup ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Generate or retrieve unique user ID from localStorage
             userId = localStorage.getItem('thePlatformUserId');
             if (!userId) {
-                userId = crypto.randomUUID();
+                userId = crypto.randomUUID(); // Generate a new complex random ID
                 localStorage.setItem('thePlatformUserId', userId);
                 console.log(`Generated new user ID: ${userId}`);
             } else {
                 console.log(`Loaded existing user ID: ${userId}`);
             }
             document.getElementById('current-user-id').textContent = userId;
-            initWebSocket();
-            
+            initWebSocket(); // Initialize WebSocket connection
             // Modals
             const createVaultModal = document.getElementById('create-vault-modal');
             const joinVaultModal = document.getElementById('join-vault-modal');
@@ -1118,21 +1346,17 @@
             const joinVaultBtn = document.getElementById('join-vault-btn');
             const createVaultClose = document.getElementById('create-vault-close');
             const joinVaultClose = document.getElementById('join-vault-close');
-            
             createVaultBtn.addEventListener('click', () => {
                 createVaultModal.classList.add('show');
-                document.getElementById('create-vault-hash-display').classList.add('hidden');
-                document.getElementById('create-vault-form').reset();
+                document.getElementById('create-vault-hash-display').classList.add('hidden'); // Hide hash display initially
+                document.getElementById('create-vault-form').reset(); // Clear form
             });
-            
             joinVaultBtn.addEventListener('click', () => {
                 joinVaultModal.classList.add('show');
-                document.getElementById('join-vault-form').reset();
+                document.getElementById('join-vault-form').reset(); // Clear form
             });
-            
             createVaultClose.addEventListener('click', () => createVaultModal.classList.remove('show'));
             joinVaultClose.addEventListener('click', () => joinVaultModal.classList.remove('show'));
-            
             // Create Vault Form Submission
             document.getElementById('create-vault-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -1140,25 +1364,51 @@
                 const vaultType = document.getElementById('vault-type').value;
                 const expirationTime = document.getElementById('expiration-time').value;
                 
-                // Generate a new AES key for the vault
-                const vaultAesKey = await generateAesKey();
-                const rawVaultAesKey = await exportKey(vaultAesKey);
-                
-                // Generate a random salt for PBKDF2
-                const salt = crypto.getRandomValues(new Uint8Array(16));
-                
-                // Send request to server to create vault
-                sendMessageToServer({
-                    type: 'create_vault',
-                    userId: userId,
-                    vaultName: vaultName,
-                    vaultType: vaultType,
-                    expiration: expirationTime,
-                    rawVaultKeyB64: btoa(String.fromCharCode(...new Uint8Array(rawVaultAesKey))),
-                    saltB64: btoa(String.fromCharCode(...salt))
-                });
+                if (vaultType === 'private') {
+                    // Generate vault hash (as before)
+                    const vaultHash = crypto.randomBytes(16).toString('hex');
+                    
+                    // Generate Kyber keypair from vault hash
+                    const { publicKey, secretKey } = await generateKyberKeypairFromHash(vaultHash);
+                    
+                    // Store secret key temporarily
+                    const vaultId = crypto.randomUUID();
+                    vaults.set(vaultId, {
+                        id: vaultId,
+                        name: vaultName,
+                        type: vaultType,
+                        expiration: expirationTime,
+                        vaultHash: vaultHash,
+                        kyberSecretKey: secretKey,
+                        messages: []
+                    });
+                    
+                    // Send public key to server
+                    sendMessageToServer({
+                        type: 'create_private_vault',
+                        userId: userId,
+                        vaultId: vaultId,
+                        vaultName: vaultName,
+                        expiration: expirationTime,
+                        vaultHash: vaultHash,
+                        publicKey: btoa(String.fromCharCode(...publicKey))
+                    });
+                } else {
+                    // Existing public vault flow
+                    const vaultAesKey = await generateAesKey();
+                    const rawVaultAesKey = await exportKey(vaultAesKey);
+                    const salt = crypto.getRandomValues(new Uint8Array(16));
+                    sendMessageToServer({
+                        type: 'create_vault',
+                        userId: userId,
+                        vaultName: vaultName,
+                        vaultType: vaultType,
+                        expiration: expirationTime,
+                        rawVaultKeyB64: btoa(String.fromCharCode(...new Uint8Array(rawVaultAesKey))),
+                        saltB64: btoa(String.fromCharCode(...salt))
+                    });
+                }
             });
-            
             // Copy Hash Button
             document.getElementById('copy-hash-btn').addEventListener('click', () => {
                 const hash = document.getElementById('generated-vault-hash').textContent;
@@ -1166,55 +1416,52 @@
                     copyToClipboard(hash);
                 }
             });
-            
             // Join Vault Form Submission
             document.getElementById('join-vault-form').addEventListener('submit', (e) => {
                 e.preventDefault();
                 const joinVaultHash = document.getElementById('join-vault-hash').value;
                 const joinVaultName = document.getElementById('join-vault-name').value;
+                
+                // Check if it's a private vault (all private vaults use hash-based joining)
+                // Request to join the private vault to get the public key
                 sendMessageToServer({
-                    type: 'join_vault',
+                    type: 'request_join_private_vault',
                     userId: userId,
                     vaultHash: joinVaultHash,
                     vaultName: joinVaultName
                 });
+                
                 joinVaultModal.classList.remove('show');
             });
-            
             // Send Message Button
             document.getElementById('send-message-btn').addEventListener('click', async () => {
                 const messageInput = document.getElementById('message-input');
                 const fileInput = document.getElementById('file-input');
                 const messageText = messageInput.value.trim();
                 const file = fileInput.files[0];
-                
                 if (!activeVaultId) {
                     showMessageBox('No Vault Selected', 'Please select a vault to send messages.');
                     return;
                 }
-                
                 if (!messageText && !file) {
-                    return;
+                    return; // Don't send empty messages
                 }
-                
                 const vault = vaults.get(activeVaultId);
                 if (!vault) {
                     showMessageBox('Error', 'Active vault not found. Please re-select or refresh.');
                     console.error("Attempted to send message to a non-existent active vault.");
                     return;
                 }
-                
                 let encryptedContent;
                 let ivB64;
                 let isFile = false;
                 let fileName = null;
                 let fileMimeType = null;
-                
+                // Create the message object for local display first
                 const localMessageObj = {
-                    sender: userId,
+                    sender: userId, // This message is from the current user
                     timestamp: new Date().toISOString(),
                 };
-                
                 if (file) {
                     try {
                         const base64File = await fileToBase64(file);
@@ -1224,9 +1471,9 @@
                         isFile = true;
                         fileName = file.name;
                         fileMimeType = file.type;
-                        messageInput.value = '';
-                        fileInput.value = '';
-                        localMessageObj.content = base64File;
+                        messageInput.value = ''; // Clear text input if file is sent
+                        fileInput.value = ''; // Clear file input
+                        localMessageObj.content = base64File; // Store raw content for local display
                         localMessageObj.isFile = true;
                         localMessageObj.fileName = fileName;
                         localMessageObj.fileMimeType = fileMimeType;
@@ -1240,8 +1487,8 @@
                         const { encryptedMessage, iv } = await encryptMessage(messageText, vault.key);
                         encryptedContent = encryptedMessage;
                         ivB64 = iv;
-                        messageInput.value = '';
-                        localMessageObj.content = messageText;
+                        messageInput.value = ''; // Clear text input
+                        localMessageObj.content = messageText; // Store raw content for local display
                         localMessageObj.isFile = false;
                     } catch (error) {
                         console.error("Error encrypting message:", error);
@@ -1249,32 +1496,29 @@
                         return;
                     }
                 }
-                
+                // Add message to local vault and display it immediately
                 vault.messages.push(localMessageObj);
-                displayMessage(localMessageObj);
-                await saveVaultsToLocalStorage();
-                
+                displayMessage(localMessageObj); // Display immediately
+                await saveVaultsToLocalStorage(); // Ensure local storage is updated
+                // Now send the encrypted message to the server
                 sendMessageToServer({
                     type: 'send_message',
                     vaultId: activeVaultId,
                     senderId: userId,
                     encryptedMessage: encryptedContent,
                     iv: ivB64,
-                    timestamp: localMessageObj.timestamp,
+                    timestamp: localMessageObj.timestamp, // Use the same timestamp
                     isFile: isFile,
                     fileName: fileName,
                     fileMimeType: fileMimeType
                 });
             });
-            
             // Attach File Button
             document.getElementById('attach-file-btn').addEventListener('click', () => {
                 document.getElementById('file-input').click();
             });
-            
             // Nuke Button
-            document.getElementById('nuke-btn').addEventListener('click', nukeAllData);
-            
+            document.getElementById('nuke-btn').addEventListener('click', nukeAllData); // Call nukeAllData directly as it has its own confirmation
             // Handle Enter key for sending messages
             document.getElementById('message-input').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
